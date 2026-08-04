@@ -3,17 +3,56 @@ import { useChat } from '../context/ChatContext';
 import ResponseCard from '../components/ResponseCard';
 import { askQuestion, getScenarios } from '../services/api';
 
+const SPARK_PATH = 'M12 3.4 13.75 9l5.6 1.75L13.75 12.5 12 18.1l-1.75-5.6L4.65 10.75 10.25 9 12 3.4Z';
+
+const Spark = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={SPARK_PATH} /></svg>
+);
+
+const CARD_ICONS = {
+  report: <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  search: <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  alert: <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  spark: <Spark size={19} />,
+};
+
+const ChatIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+function groupChats(chats) {
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const weekAgo = new Date(startOfToday.getTime() - 6 * 86400000);
+  const groups = { today: [], week: [], older: [] };
+  chats.forEach(c => {
+    const t = new Date(c.createdAt);
+    if (t >= startOfToday) groups.today.push(c);
+    else if (t >= weekAgo) groups.week.push(c);
+    else groups.older.push(c);
+  });
+  return [
+    ['اليوم', groups.today],
+    ['هذا الأسبوع', groups.week],
+    ['أقدم', groups.older],
+  ].filter(([, list]) => list.length > 0);
+}
+
 export default function ChatPage() {
-  const { chats, activeChat, activeChatId, setActiveChatId, addMessage, renameChat, deleteChat, createNewChat } = useChat();
+  const { chats, activeChat, activeChatId, setActiveChatId, addMessage, deleteChat, createNewChat } = useChat();
   const messages = activeChat?.messages || [];
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [chatMenu, setChatMenu] = useState(null);
-  const [renamingChat, setRenamingChat] = useState(null);
-  const [renameValue, setRenameValue] = useState('');
   const [scenarios, setScenarios] = useState([]);
   const inputRef = useRef(null);
   const endRef = useRef(null);
+
+  const params = new URLSearchParams(location.search);
+  const userName = params.get('user') || 'سيف أشرف';
+  const userRole = params.get('role') || 'المركز الأمني';
 
   useEffect(() => {
     getScenarios().then(setScenarios).catch(() => setScenarios([]));
@@ -35,197 +74,148 @@ export default function ChatPage() {
       const res = await askQuestion(q, history);
       addMessage(activeChatId, { role: 'assistant', type: 'structured', data: res, query: q });
     } catch (err) {
-      addMessage(activeChatId, { role: 'assistant', type: 'text', content: `Error: ${err.message}`, isError: true });
+      addMessage(activeChatId, { role: 'assistant', type: 'text', content: `تعذّر الاتصال: ${err.message}`, isError: true });
     }
     setLoading(false);
     inputRef.current?.focus();
   };
 
-  const startRename = (chat) => { setRenamingChat(chat.id); setRenameValue(chat.title); setChatMenu(null); };
-  const finishRename = (id) => { if (renameValue.trim()) renameChat(id, renameValue.trim()); setRenamingChat(null); };
-
-  // Show suggestion chips when the conversation is fresh (only the welcome message)
-  const isFresh = messages.length <= 1;
+  const isFresh = messages.length === 0;
 
   return (
-    <div className="h-full flex gap-4 p-4">
+    <div className="body-row">
 
-      {/* Chat history panel (left) */}
-      <div className="w-[260px] shrink-0 glass-card flex flex-col">
-        <div className="p-4 border-b border-[rgba(233,246,239,0.08)]">
-          <p className="panel-title">Recent conversations</p>
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {chats.map(chat => {
-            const isRenaming = renamingChat === chat.id;
-            const menuOpen = chatMenu === chat.id;
-            return (
-              <div key={chat.id} className="relative group">
-                {isRenaming ? (
-                  <div className="px-2 py-1.5">
-                    <input value={renameValue} onChange={e => setRenameValue(e.target.value)}
-                      onBlur={() => finishRename(chat.id)} onKeyDown={e => e.key === 'Enter' && finishRename(chat.id)} autoFocus
-                      className="w-full rounded-lg px-2 py-1.5 text-xs border outline-none"
-                      style={{ background: 'rgba(8,26,19,0.8)', borderColor: 'var(--gold-hi)', color: 'var(--text)' }} />
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <button onClick={() => setActiveChatId(chat.id)}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs text-left truncate transition-all ${
-                        chat.id === activeChatId
-                          ? 'font-semibold'
-                          : 'hover:bg-[rgba(45,212,167,0.06)] border border-transparent'
-                      }`}
-                      style={chat.id === activeChatId
-                        ? { color: 'var(--gold-hi)', background: 'rgba(45,212,167,0.12)', border: '1px solid rgba(45,212,167,0.30)', borderLeft: '3px solid var(--gold)' }
-                        : { color: 'var(--text-md)' }
-                      }>
-                      <span className="text-sm">💬</span>
-                      <span className="truncate flex-1" dir="auto">{chat.title}</span>
-                    </button>
-                    <button onClick={e => { e.stopPropagation(); setChatMenu(menuOpen ? null : chat.id); }}
-                      className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[rgba(45,212,167,0.12)] transition-all shrink-0 ml-0.5"
-                      style={{ color: 'var(--text-faint)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+      {/* Sidebar — right side in RTL */}
+      <aside className="side-card">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {groupChats(chats).map(([label, list]) => (
+            <div key={label}>
+              <div className="side-group">{label}</div>
+              {list.map(chat => (
+                <div key={chat.id} className="relative group/item">
+                  <button
+                    className={`side-item ${chat.id === activeChatId ? 'active' : ''}`}
+                    onClick={() => setActiveChatId(chat.id)} title={chat.title}>
+                    <ChatIcon />
+                    <span className="t" dir="auto">{chat.title}</span>
+                  </button>
+                  {chats.length > 1 && (
+                    <button
+                      onClick={e => { e.stopPropagation(); deleteChat(chat.id); }}
+                      className="absolute top-1/2 -translate-y-1/2 end-2 p-1 rounded opacity-0 group-hover/item:opacity-100 transition-opacity"
+                      style={{ color: 'var(--text-faint)' }} title="حذف المحادثة">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
                     </button>
-                  </div>
-                )}
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setChatMenu(null)} />
-                    <div className="absolute right-0 top-full mt-0.5 rounded-xl shadow-xl overflow-hidden z-50 min-w-[130px] animate-fade-up"
-                      style={{ background: 'rgba(9,28,20,0.97)', border: '1px solid rgba(45,212,167,0.25)', backdropFilter: 'blur(20px)' }}>
-                      <button onClick={() => startRename(chat)} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[rgba(45,212,167,0.08)]" style={{ color: 'var(--text-md)' }}>
-                        Rename
-                      </button>
-                      <button onClick={() => { deleteChat(chat.id); setChatMenu(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-[var(--red-bg)]" style={{ color: 'var(--red)' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="p-3 border-t border-[rgba(233,246,239,0.08)]">
-          <button onClick={() => { createNewChat(); }}
-            className="w-full py-2.5 rounded-lg text-xs font-bold transition-all"
-            style={{ border: '2px dashed rgba(45,212,167,0.35)', color: 'var(--gold)', background: 'rgba(45,212,167,0.04)' }}>
-            + New conversation
-          </button>
-        </div>
-      </div>
-
-      {/* Main chat area */}
-      <div className="flex-1 glass-card flex flex-col relative" style={{ boxShadow: 'var(--glass-shadow-lg)' }}>
-        <img src="/badge.svg" alt="" className="chat-watermark" onError={e => e.target.style.display='none'} />
-
-        {/* Header with title */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-[rgba(233,246,239,0.08)] relative z-[1]">
-          <div className="flex items-center gap-2">
-            <span className="w-[3px] h-4 rounded" style={{ background: 'var(--gold-grad)' }} />
-            <span className="text-sm font-bold" dir="auto" style={{ color: 'var(--text)' }}>{activeChat?.title || 'New conversation'}</span>
-          </div>
-          <span className="text-[9.5px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--text-faint)' }}>
-            Violations · Criminal Reports · Movements
-          </span>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 relative z-[1]">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex gap-2.5 animate-fade-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              {/* Avatar */}
-              {msg.role === 'user' ? (
-                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold"
-                  title="Officer"
-                  style={{ background: 'rgba(45,212,167,0.12)', border: '1px solid rgba(45,212,167,0.30)', color: 'var(--gold-hi)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
+                  )}
                 </div>
-              ) : (
-                <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center p-1"
-                  style={{ background: 'var(--nav-grad)', border: '1px solid rgba(45,212,167,0.35)' }}>
-                  <img src="/badge.svg" alt="Assistant" className="w-full h-full object-contain" />
-                </div>
-              )}
-              {/* Bubble */}
-              <div className="max-w-[70%]">
-                {msg.type === 'structured' ? (
-                  <ResponseCard data={msg.data} />
-                ) : (
-                  <div dir="auto" className={`px-4 py-3 text-[13px] leading-[1.75] ${
-                    msg.role === 'user' ? 'msg-user-bubble' : 'msg-bot-bubble'
-                  } ${msg.isError ? 'text-[var(--red)]' : ''}`}
-                    style={{ color: msg.isError ? undefined : 'var(--text)' }}>
-                    {msg.content}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div className="flex gap-2.5 animate-fade-up">
-              <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center p-1"
-                style={{ background: 'var(--nav-grad)', border: '1px solid rgba(45,212,167,0.35)' }}>
-                <img src="/badge.svg" alt="Assistant" className="w-full h-full object-contain" />
-              </div>
-              <div className="msg-bot-bubble px-4 py-3">
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map(j => (
-                    <span key={j} className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: 'var(--gold)', opacity: 0.3, animation: `pop 1.4s ease-in-out infinite ${j * 0.15}s` }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={endRef} />
-        </div>
-
-        {/* Suggestion chips - only when conversation is fresh */}
-        {isFresh && scenarios.length > 0 && (
-          <div className="px-5 pb-1 pt-1 relative z-[1]">
-            <p className="text-[9px] tracking-widest uppercase font-bold mb-2 px-1" style={{ color: 'var(--text-dim)' }}>
-              Suggested prompts · أسئلة مقترحة
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {scenarios.map(sc => (
-                <button key={sc.id} onClick={() => send(sc.prompt)} className="suggestion-chip" title={sc.description}>
-                  <span className="chip-tag">{sc.label}</span>
-                  <span dir="auto">{sc.prompt}</span>
-                </button>
               ))}
             </div>
+          ))}
+        </div>
+
+        <button className="btn-new" onClick={createNewChat}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          محادثة جديدة
+        </button>
+
+        <div className="user-chip">
+          <div className="avatar">{userName.trim().charAt(0)}</div>
+          <div className="who">
+            <span className="n">{userName}</span>
+            <span className="r">{userRole}</span>
           </div>
-        )}
+        </div>
+      </aside>
 
-        {/* Input bar */}
-        <div className="px-5 pb-4 pt-2 relative z-[1]">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-[rgba(233,246,239,0.10)] transition-all focus-within:border-[var(--gold-hi)] focus-within:shadow-[0_0_0_3px_rgba(45,212,167,0.12)]"
-            style={{ background: 'var(--glass-strong)', backdropFilter: 'blur(12px)' }}>
+      {/* Main column */}
+      <div className="main-col">
+        <div className="main-card">
+          {isFresh ? (
+            <>
+              <div className="hero animate-fade-up">
+                <div className="hero-icon"><Spark size={34} /></div>
+                <h2>كيف أساعدك في تحليل البيانات؟</h2>
+                <p>
+                  اسألني عن السائقين الخطرين والمخالفات والبلاغات الجنائية والتحركات،
+                  أو اطلب تنبؤاً أو توصية — وسأجيبك مباشرةً من بيانات اللوحة، بالعربية أو الإنجليزية.
+                </p>
+              </div>
+              {scenarios.length > 0 && (
+                <div className="sugg-grid animate-slide-up">
+                  {scenarios.map(sc => (
+                    <button key={sc.id} className="sugg-card" onClick={() => send(sc.prompt)}>
+                      <span className={`ico ico-${sc.color || 'green'}`}>
+                        {CARD_ICONS[sc.icon] || CARD_ICONS.spark}
+                      </span>
+                      <span className="tx">
+                        <span className="cat">{sc.category}</span>
+                        <span className="pr" dir="auto">{sc.prompt}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="msgs">
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex gap-2.5 animate-fade-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  {msg.role === 'user' ? (
+                    <div className="avatar-sq avatar-user" title={userName}>{userName.trim().charAt(0)}</div>
+                  ) : (
+                    <div className="avatar-sq avatar-bot" title="المساعد الذكي"><Spark size={18} /></div>
+                  )}
+                  <div className="max-w-[75%]">
+                    {msg.type === 'structured' ? (
+                      <ResponseCard data={msg.data} />
+                    ) : (
+                      <div dir="auto" className={`px-4 py-3 text-[13.5px] leading-[1.85] ${
+                        msg.role === 'user' ? 'msg-user-bubble' : 'msg-bot-bubble'
+                      } ${msg.isError ? 'text-[var(--red)]' : ''}`}
+                        style={{ color: msg.isError ? undefined : 'var(--text)' }}>
+                        {msg.content}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
 
-            {/* Text input */}
-            <textarea ref={inputRef} rows="1" value={input} dir="auto"
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={`Ask about the data in English or Arabic — اسأل عن البيانات`}
-              className="flex-1 bg-transparent border-none outline-none text-[13px] py-2 px-2 resize-none leading-relaxed"
-              style={{ fontFamily: "'Manrope', 'IBM Plex Sans Arabic', sans-serif", color: 'var(--text)' }} />
+              {loading && (
+                <div className="flex gap-2.5 animate-fade-up">
+                  <div className="avatar-sq avatar-bot"><Spark size={18} /></div>
+                  <div className="msg-bot-bubble px-4 py-3">
+                    <div className="flex gap-1.5">
+                      {[0, 1, 2].map(j => (
+                        <span key={j} className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: 'var(--mint)', opacity: 0.3, animation: `pop 1.4s ease-in-out infinite ${j * 0.15}s` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+          )}
 
-            {/* Send */}
-            <button onClick={() => send()}
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-              style={{ background: 'var(--gold-grad)', color: '#04110a', boxShadow: '0 3px 12px rgba(45,212,167,0.35)' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            </button>
+          {/* Input pill */}
+          <div className="input-row">
+            <div className="input-pill">
+              <span className="spark"><Spark size={17} /></span>
+              <textarea ref={inputRef} rows="1" value={input} dir="auto"
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="اكتب سؤالك للمساعد الذكي..." />
+              <button className="btn-send" onClick={() => send()} title="إرسال">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}>
+                  <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

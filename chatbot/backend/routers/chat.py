@@ -15,20 +15,20 @@ class QueryRequest(BaseModel):
     conversation_history: list[dict] = []
 
 
-# Suggested prompts shown as chips on a fresh conversation (bilingual AR/EN).
+# The four category cards on the empty state (icon/color are rendered by the frontend).
 SUGGESTIONS = [
-    {"id": "kpis",      "label": "Q1", "prompt": "أعطني أهم مؤشرات لوحة السائقين الخطرين",
-     "description": "Dangerous-drivers overview KPIs"},
-    {"id": "risk",      "label": "Q2", "prompt": "Who are our 10 riskiest drivers and what should we do about them?",
-     "description": "Driver risk model + recommendations"},
-    {"id": "offences",  "label": "Q3", "prompt": "اعرض المخالفات الأكثر تكراراً في رسم بياني",
-     "description": "Top offences chart"},
-    {"id": "profile",   "label": "Q4", "prompt": "اعرض البطاقة التعريفية للسائق أحمد الزعابي",
-     "description": "Driver profile card lookup"},
-    {"id": "forecast",  "label": "Q5", "prompt": "Run the dangerous-drivers forecast to 2030",
-     "description": "Forecasting model"},
-    {"id": "watchlist", "label": "Q6", "prompt": "كم سائقاً خطراً لديه بلاغات جنائية مقلقة وهو داخل الدولة حالياً؟",
-     "description": "Cross-dataset priority watchlist"},
+    {"id": "reports", "icon": "report", "color": "green",
+     "category": "تقارير وملخصات",
+     "prompt": "لخّص لي حالة لوحة السائقين الخطرين الآن مع أهم المؤشرات"},
+    {"id": "query", "icon": "search", "color": "blue",
+     "category": "استعلام عن البيانات",
+     "prompt": "أظهر جميع الأشخاص من الهند الذين غادروا الدولة"},
+    {"id": "alerts", "icon": "alert", "color": "amber",
+     "category": "تنبيهات وأنماط",
+     "prompt": "كم سائقاً خطراً لديه بلاغات جنائية مقلقة وهو داخل الدولة حالياً؟"},
+    {"id": "models", "icon": "spark", "color": "purple",
+     "category": "التنبؤ والنماذج",
+     "prompt": "شغّل نموذج التنبؤ لأعداد السائقين الخطرين حتى 2030 واعرضه بيانياً"},
 ]
 
 

@@ -2,23 +2,21 @@ import { createContext, useContext, useState, useCallback } from 'react';
 
 const ChatContext = createContext();
 
-const WELCOME = {
-  role: 'assistant',
-  type: 'text',
-  content: "مرحباً — أنا المساعد الذكي لمركز التحليل والتنبؤ الأمني في شرطة دبي. Hi — I'm the Smart Assistant of the Dubai Police Security Analytics & Forecast Center. I can analyse dangerous drivers, violations, criminal reports and movements, look up driver profile cards, run the forecasting, risk and segmentation models, build charts and give recommendations — in English or Arabic. What would you like to look at?",
-};
 const id = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-const NEW_TITLE = 'New conversation';
+const NEW_TITLE = 'محادثة جديدة';
+
+// A fresh conversation starts empty — the hero empty-state replaces a welcome bubble.
+const newChat = () => ({ id: id(), title: NEW_TITLE, messages: [], createdAt: new Date() });
 
 export function ChatProvider({ children }) {
-  const [chats, setChats] = useState([{ id: id(), title: NEW_TITLE, messages: [WELCOME], createdAt: new Date() }]);
+  const [chats, setChats] = useState(() => [newChat()]);
   const [activeChatId, setActiveChatId] = useState(chats[0].id);
 
   const activeChat = chats.find(c => c.id === activeChatId) || chats[0];
 
   const createNewChat = useCallback(() => {
-    const c = { id: id(), title: NEW_TITLE, messages: [WELCOME], createdAt: new Date() };
+    const c = newChat();
     setChats(p => [c, ...p]);
     setActiveChatId(c.id);
   }, []);
@@ -28,7 +26,7 @@ export function ChatProvider({ children }) {
       if (c.id !== chatId) return c;
       const updated = { ...c, messages: [...c.messages, msg] };
       if (msg.role === 'user' && c.title === NEW_TITLE)
-        updated.title = msg.content.slice(0, 40) + (msg.content.length > 40 ? '...' : '');
+        updated.title = msg.content.slice(0, 40) + (msg.content.length > 40 ? '…' : '');
       return updated;
     }));
   }, []);
@@ -41,7 +39,7 @@ export function ChatProvider({ children }) {
     setChats(p => {
       const filtered = p.filter(c => c.id !== chatId);
       if (filtered.length === 0) {
-        return [{ id: id(), title: NEW_TITLE, messages: [WELCOME], createdAt: new Date() }];
+        return [newChat()];
       }
       return filtered;
     });

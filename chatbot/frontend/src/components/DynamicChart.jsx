@@ -31,7 +31,7 @@ export default function DynamicChart({ spec }) {
   } = spec;
 
   return (
-    <div className="mt-2 rounded-xl p-3.5 animate-fade-up"
+    <div className="mt-2 rounded-xl p-3.5 animate-fade-up" dir="ltr"
       style={{ background: 'rgba(9,28,20,0.72)', border: '1px solid rgba(45,212,167,0.16)', boxShadow: 'var(--glass-shadow)' }}>
       {(title || subtitle) && (
         <div className="mb-2">
