@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limousine Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+<style>
+  :root {
+    --bg: #f4f5f8;
+    --card: #ffffff;
+    --border: #ecedf1;
+    --ink-1: #1c2740;
+    --ink-2: #4a5468;
+    --muted: #98a1b3;
+    --faint: #c2c8d4;
+    --red: #ed4956;
+    --red-soft: #fdeef0;
+    --red-bd: #f6d6da;
+    --amber: #f5a524;
+    --amber-soft: #fff7ea;
+    --amber-bd: #f6e6c8;
+    --blue: #3e8ef7;
+    --blue-soft: #eef5fe;
+    --blue-bd: #d4e6fb;
+    --green: #22b573;
+    --shadow: 0 1px 2px rgba(20,28,46,.04), 0 4px 14px rgba(20,28,46,.05);
+    --r: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--ink-1);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1320px; margin: 0 auto; }
+
+  /* ─────────── PAGE ─────────── */
+  .page { padding: 26px 26px 40px; }
+  .page-head { display: flex; align-items: flex-start; margin-bottom: 16px; }
+  .page-title { font-size: 23px; font-weight: 800; letter-spacing: -.4px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ─────────── FILTER BAR ─────────── */
+  .filters { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .filt { position: relative; }
+  .filt select {
+    appearance: none; -webkit-appearance: none;
+    height: 38px; padding: 0 34px 0 14px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    font: inherit; font-size: 13px; color: var(--ink-2); font-weight: 500; cursor: pointer;
+    min-width: 150px;
+  }
+  .filt select:hover { border-color: #d7dae1; }
+  .filt select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+  .filt::after {
+    content: ''; position: absolute; right: 14px; top: 50%; width: 8px; height: 8px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg); pointer-events: none;
+  }
+  .filt-lbl { position: absolute; top: -7px; left: 11px; background: var(--bg); padding: 0 4px;
+    font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .date-btn {
+    height: 38px; padding: 0 15px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-2); font-weight: 500; cursor: pointer;
+  }
+  .date-btn svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 1.8; }
+  .datepick { position: relative; }
+  .date-pop { position: absolute; top: 44px; left: 0; z-index: 30; width: 184px; max-height: 300px;
+    overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 11px;
+    box-shadow: 0 12px 30px rgba(20,28,46,.16); padding: 6px; display: none; }
+  .date-pop.open { display: block; }
+  .date-pop-item { padding: 9px 12px; border-radius: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+  .date-pop-item:hover { background: #f6f8fb; }
+  .date-pop-item.on { background: var(--blue-soft); color: #2467c9; font-weight: 600; }
+  .chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 4px; }
+  .chip-f { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 8px 0 11px;
+    background: var(--blue-soft); border: 1px solid var(--blue-bd); border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: #2467c9; }
+  .chip-f .x { width: 16px; height: 16px; border-radius: 5px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; color: #2467c9; font-size: 13px; }
+  .chip-f .x:hover { background: #d8e7fc; }
+  .chip-clear { font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; padding: 0 4px; }
+  .chip-clear:hover { color: var(--red); }
+
+  /* ─────────── CARDS / GRID ─────────── */
+  .card { background: var(--card); border: 1px solid #C6D2E1; border-radius: var(--r); box-shadow: var(--shadow); }
+  .grid { display: grid; gap: 16px; }
+  .grid.row { align-items: stretch; }
+  .grid.row > .card { display: flex; flex-direction: column; }
+
+  /* KPI strip */
+  .kpis { grid-template-columns: repeat(6, 1fr); margin-bottom: 16px; }
+  .kpi { padding: 16px 17px; display: flex; align-items: center; gap: 13px; min-height: 84px;
+    background: linear-gradient(105deg, #E7EFF8 0%, #F5F8FB 55%, #ffffff 100%);
+    border-color: #ffffff; box-shadow: 0 4px 6px 5px rgba(73, 73, 73, 0.10); }
+  .kpi-ico { width: 42px; height: 42px; border-radius: 50%; background: var(--blue-soft);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kpi-ico svg { width: 21px; height: 21px; stroke: var(--blue); fill: none; stroke-width: 1.8; }
+  .kpi-num { font-size: 25px; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
+  .kpi-lbl { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+
+  .kpi.sev { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+  .kpi.sev:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(20,28,46,.08); }
+  .kpi.sev.dim { opacity: .42; }
+  .kpi.sev.on { box-shadow: 0 0 0 2px currentColor inset; }
+  .kpi.sev .sev-top { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .kpi.sev .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .kpi.sev .sev-num { font-size: 25px; font-weight: 800; margin-top: 9px; letter-spacing: -.5px; }
+  .kpi.red   { background: linear-gradient(105deg, #F8D2D7 0%, #FDEEF0 55%, #ffffff 100%); border-color: var(--red-bd);   color: var(--red); }
+  .kpi.amber { background: linear-gradient(105deg, #FAE3BD 0%, #FFF7EA 55%, #ffffff 100%); border-color: var(--amber-bd); color: var(--amber); }
+  .kpi.blue  { background: linear-gradient(105deg, #CBE2FB 0%, #EEF5FE 55%, #ffffff 100%); border-color: var(--blue-bd);  color: var(--blue); }
+  .kpi.red   .dot { background: var(--red); }   .kpi.red   .sev-num { color: var(--red); }   .kpi.red   .sev-top { color: var(--ink-2); }
+  .kpi.amber .dot { background: var(--amber); } .kpi.amber .sev-num { color: var(--amber); } .kpi.amber .sev-top { color: var(--ink-2); }
+  .kpi.blue  .dot { background: var(--blue); }  .kpi.blue  .sev-num { color: var(--blue); }  .kpi.blue  .sev-top { color: var(--ink-2); }
+
+  /* Panel header */
+  .ph { display: flex; align-items: center; padding: 17px 19px; }
+  .ph-tx { display: flex; flex-direction: column; }
+  .ph-title { font-size: 15.5px; font-weight: 700; }
+  .ph-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ph-act { margin-left: auto; color: var(--faint); cursor: pointer; }
+  .ph-act svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .ph-search { margin-left: auto; width: 210px; height: 34px; background: #f6f7f9;
+    border: 1px solid var(--border); border-radius: 9px; display: flex; align-items: center;
+    gap: 8px; padding: 0 12px; color: var(--muted); font-size: 13px; }
+  .ph-search svg { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+  .row { margin-bottom: 16px; }
+  .r-60-40 { grid-template-columns: 1.5fr 1fr; }
+  .r-33-66 { grid-template-columns: 1fr 2fr; }
+  .r-map   { grid-template-columns: 1.3fr 1fr 1fr; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--ink-2); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 4px; border-radius: 2px; display: inline-block; }
+
+  /* Area chart */
+  .chart-wrap { padding: 6px 16px 16px; position: relative; flex: 1; }
+  .chart-wrap svg.chart { width: 100%; height: auto; display: block; }
+  .ttip { position: absolute; pointer-events: none; opacity: 0;
+    background: #fff; border: 1px solid var(--border); border-radius: 9px;
+    box-shadow: 0 6px 20px rgba(20,28,46,.14); padding: 9px 11px; font-size: 11px; min-width: 124px;
+    transition: opacity .12s ease; z-index: 5; }
+  .ttip .tip-h { font-weight: 700; font-size: 11.5px; margin-bottom: 6px; color: var(--ink-1); }
+  .ttip .tip-r { display: flex; align-items: center; gap: 6px; color: var(--ink-2); margin: 3px 0; }
+  .ttip .tip-r i { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .ttip .tip-r b { margin-left: auto; font-weight: 700; color: var(--ink-1); }
+
+  /* Horizontal volume bars */
+  .vbars { padding: 8px 19px 16px; }
+  .vbar { margin: 13px 0; cursor: pointer; border-radius: 8px; padding: 4px 6px; margin-left: -6px; margin-right: -6px; transition: background .12s ease; }
+  .vbar:hover { background: #f6f8fb; }
+  .vbar.on { background: var(--blue-soft); }
+  .vbar.dim { opacity: .4; }
+  .vbar-top { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+  .vbar-top .vb-name { color: var(--ink-2); font-weight: 500; }
+  .vbar-top .vb-val { color: var(--ink-1); font-weight: 700; }
+  .vbar-track { height: 7px; background: #eef0f4; border-radius: 4px; overflow: hidden; }
+  .vbar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#5aa0f8,#3e8ef7); }
+
+  /* Stacked vehicle bars */
+  .svbars { padding: 8px 19px 14px; }
+  .svbar { display: grid; grid-template-columns: 58px 1fr 32px; align-items: center; gap: 12px; margin: 6px 0;
+    cursor: pointer; border-radius: 8px; padding: 6px; margin-left: -6px; margin-right: -6px; transition: background .12s ease; }
+  .svbar:hover { background: #f6f8fb; }
+  .svbar.on { background: var(--blue-soft); }
+  .svbar.dim { opacity: .4; }
+  .svbar .sv-lbl { font-size: 11px; color: var(--muted); font-weight: 600; line-height: 1.15; }
+  .svbar .sv-track { height: 11px; background: #eef0f4; border-radius: 6px; overflow: hidden; display: flex; }
+  .svbar .sv-track span { height: 100%; display: block; }
+  .svbar .sv-val { font-size: 13px; font-weight: 700; text-align: right; }
+  .seg-red { background: #ed4956; } .seg-amber { background: #f5a524; } .seg-blue { background: #3e8ef7; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  .tbl-wrap { padding: 0 8px 8px; flex: 1; display: flex; flex-direction: column; }
+  thead th { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+    font-weight: 600; text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border); }
+  tbody td { font-size: 12.5px; color: var(--ink-2); padding: 15px 12px; border-bottom: 1px solid #f1f2f5; }
+  tbody tr { cursor: pointer; transition: background .12s ease; }
+  tbody tr:hover { background: #f6f8fb; }
+  tbody tr.on { background: var(--blue-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  td .t-strong { color: var(--ink-1); font-weight: 600; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px; }
+  .pill.high { background: var(--red-soft); color: var(--red); }
+  .pill.medium { background: var(--amber-soft); color: #c4820e; }
+  .pill.low { background: var(--blue-soft); color: #2467c9; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .tsub { color: var(--muted); font-size: 11px; }
+  .empty { text-align: center; color: var(--muted); font-size: 12.5px; padding: 28px 0; }
+  .tfoot { display: flex; align-items: center; padding: 14px 12px 8px; margin-top: auto; }
+  .tfoot .info { font-size: 12px; color: var(--muted); }
+  .pager { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .pager button { border: 1px solid var(--border); background: #fff; border-radius: 7px; padding: 5px 11px;
+    color: var(--ink-2); cursor: pointer; font: inherit; font-size: 12px; }
+  .pager .pg { width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .pager .pg.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* Map */
+  .map-wrap { padding: 12px; flex: 1; display: flex; }
+  .map-box { position: relative; flex: 1; min-height: 256px; border-radius: 11px; overflow: hidden; border: 1px solid var(--border); }
+  .map-box .mapboxgl-map { border-radius: 11px; }
+
+  /* Locations list */
+  .locs { padding: 4px 8px 10px; }
+  .loc { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f2f5;
+    cursor: pointer; border-radius: 9px; transition: background .12s ease; }
+  .loc:hover { background: #f6f8fb; }
+  .loc.on { background: var(--blue-soft); }
+  .loc.dim { opacity: .42; }
+  .loc:last-child { border-bottom: none; }
+  .loc .rank { width: 22px; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .loc .lname { font-size: 13px; font-weight: 600; color: var(--ink-1); }
+  .loc .lsev { font-size: 11px; color: var(--red); font-weight: 600; margin-top: 2px; }
+  .loc .lval { margin-left: auto; text-align: right; }
+  .loc .lnum { font-size: 14px; font-weight: 800; }
+  .loc .lunit { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .loc-badge { font-size: 11px; color: var(--muted); }
+
+  /* Severity donut */
+  .res { padding: 16px 20px 22px; display: flex; flex-direction: column; align-items: center; flex: 1; justify-content: center; }
+  .res-donut { position: relative; width: 158px; height: 158px; }
+  .res-donut svg circle.seg { cursor: pointer; transition: opacity .12s ease; }
+  .res-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .res-total { font-size: 28px; font-weight: 800; color: var(--ink-1); letter-spacing: -.5px; }
+  .res-pl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+  .res-stats { display: flex; gap: 22px; margin-top: 20px; }
+  .res-stat { text-align: center; cursor: pointer; }
+  .res-stat .rs-num { font-size: 18px; font-weight: 800; }
+  .res-stat .rs-num.red { color: var(--red); } .res-stat .rs-num.amber { color: var(--amber); } .res-stat .rs-num.blue { color: var(--blue); }
+  .res-stat .rs-lbl { font-size: 10.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 5px; justify-content: center; }
+  .res-stat .rs-lbl i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="page">
+
+      <!-- HEADING -->
+      <div class="page-head">
+        <div>
+          <div class="page-title">Limousine Overview</div>
+          <div class="page-sub">Overview of fleet alerts, violations, and resolution status.</div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filters">
+        <div class="datepick">
+          <button class="date-btn" id="dateBtn">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span id="dateLbl">Pick a date</span>
+            <svg viewBox="0 0 24 24" style="width:14px"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="date-pop" id="datePop"></div>
+        </div>
+        <div class="filt"><span class="filt-lbl">Severity</span>
+          <select id="fSeverity"><option value="">All Severities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+        </div>
+        <div class="filt"><span class="filt-lbl">Status</span>
+          <select id="fStatus"><option value="">All Statuses</option><option value="new">New</option><option value="pending">Pending</option><option value="resolved">Resolved</option></select>
+        </div>
+        <div class="filt"><span class="filt-lbl">Alert Type</span>
+          <select id="fType"><option value="">All Types</option></select>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid kpis">
+        <div class="card kpi">
+          <div class="kpi-ico"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+          <div><div class="kpi-num" id="kNew">—</div><div class="kpi-lbl">New Alerts</div></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-ico"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+          <div><div class="kpi-num" id="kPending">—</div><div class="kpi-lbl">Pending Alerts</div></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-ico"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+          <div><div class="kpi-num" id="kResolved">—</div><div class="kpi-lbl">Resolved Alerts</div></div>
+        </div>
+        <div class="card kpi sev red" data-sev="high">
+          <div class="sev-top"><span class="dot"></span>High Severity</div>
+          <div class="sev-num" id="kHigh">—</div>
+        </div>
+        <div class="card kpi sev amber" data-sev="medium">
+          <div class="sev-top"><span class="dot"></span>Medium Severity</div>
+          <div class="sev-num" id="kMed">—</div>
+        </div>
+        <div class="card kpi sev blue" data-sev="low">
+          <div class="sev-top"><span class="dot"></span>Low Severity</div>
+          <div class="sev-num" id="kLow">—</div>
+        </div>
+      </div>
+
+      <!-- VIOLATIONS SUMMARY ROW -->
+      <div class="grid row r-60-40">
+        <div class="card">
+          <div class="ph">
+            <div class="ph-tx"><div class="ph-title">Violations Summary</div><div class="ph-sub">Alert volume by severity over the year</div></div>
+            <div class="legend" style="margin-left:auto">
+              <span><i style="background:#ed4956"></i>High</span>
+              <span><i style="background:#f5a524"></i>Medium</span>
+              <span><i style="background:#3e8ef7"></i>Low</span>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <svg class="chart" id="violChart" viewBox="0 0 660 300"></svg>
+            <div class="ttip" id="violTip"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ph">
+            <div class="ph-tx"><div class="ph-title">Violations Summary</div><div class="ph-sub">Top alert types by volume</div></div>
+            <div class="ph-act"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></div>
+          </div>
+          <div class="vbars" id="volBars"></div>
+        </div>
+      </div>
+
+      <!-- VEHICLE VIOLATIONS + RECENT ALERTS -->
+      <div class="grid row r-33-66">
+        <div class="card">
+          <div class="ph"><div class="ph-tx"><div class="ph-title">Top Vehicle Violations</div></div><div class="ph-act" style="color:#ed4956">•••</div></div>
+          <div class="svbars" id="vehBars"></div>
+        </div>
+
+        <div class="card">
+          <div class="ph">
+            <div class="ph-tx"><div class="ph-title">Recent Alerts Incidents</div></div>
+            <div class="ph-search">
+              <svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Search...
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Alert Category &amp; Type</th><th>Duplication</th><th>Vehicle</th><th>Severity</th><th>Driver</th><th>Last Occurrence</th>
+              </tr></thead>
+              <tbody id="alertRows"></tbody>
+            </table>
+            <div class="tfoot">
+              <span class="info" id="tblInfo">—</span>
+              <div class="pager">
+                <button>Previous</button>
+                <button class="pg active">1</button><button class="pg">2</button><button class="pg">3</button>
+                <button>Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP + LOCATIONS + SEVERITY -->
+      <div class="grid row r-map">
+        <div class="card">
+          <div class="ph"><div class="ph-tx"><div class="ph-title">Violations Heatmap</div></div></div>
+          <div class="map-wrap">
+            <div class="map-box"><div id="catmap" style="width:100%;height:100%"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ph"><div class="ph-tx"><div class="ph-title">Top Alert Locations</div></div><span class="loc-badge" id="locBadge" style="margin-left:auto">—</span></div>
+          <div class="locs" id="locList"></div>
+        </div>
+
+        <div class="card">
+          <div class="ph"><div class="ph-tx"><div class="ph-title">Severity Breakdown</div></div></div>
+          <div class="res">
+            <div class="res-donut">
+              <svg id="sevDonut" viewBox="0 0 160 160" style="width:158px;height:158px"></svg>
+              <div class="res-center"><div class="res-total" id="sevTotal">—</div><div class="res-pl">Total Alerts</div></div>
+            </div>
+            <div class="res-stats">
+              <div class="res-stat" data-sev="high"><div class="rs-num red" id="dHigh">—</div><div class="rs-lbl"><i style="background:#ed4956"></i>High</div></div>
+              <div class="res-stat" data-sev="medium"><div class="rs-num amber" id="dMed">—</div><div class="rs-lbl"><i style="background:#f5a524"></i>Medium</div></div>
+              <div class="res-stat" data-sev="low"><div class="rs-num blue" id="dLow">—</div><div class="rs-lbl"><i style="background:#3e8ef7"></i>Low</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  /* ════════════════════════════════════════════════════════════════
+   *  CONFIG — the only per-category block (swapped for taxi/limo/marine)
+   * ════════════════════════════════════════════════════════════════ */
+  const CONFIG = {
+    category: 'Limousine',
+    vehiclePrefix: 'LM',
+    total: 1450,
+    sevWeights:    { high: 33, medium: 58, low: 9 },
+    statusWeights: { new: 44, pending: 22, resolved: 34 }
+  };
+
+  /* ─── Shared dimensions (identical across categories) ─── */
+  const TYPES = [
+    'Distracted Driving Alert', 'Black trip (Inside Dubai)', 'Vehicle empty while Idling',
+    'Internal Cam Disconnection', 'Camera Disconnect Night', 'Harsh Braking Event',
+    'Eating & Drinking', 'Driver Sleeping (MNVR)', 'Drive Opposite Direction'
+  ];
+  const TYPE_W = [22, 20, 18, 12, 10, 9, 6, 4, 3];
+  const VEHICLE_SUFFIX = ['583','349','0661','644','0019','447','712','228','905','156'];
+  const VEHICLE_W = [30, 24, 20, 16, 13, 10, 8, 6, 5, 4];
+  // Dubai locations — all on land (east of the coastline)
+  const LOCATIONS = [
+    { name: 'Sheikh Zayed Road, Dubai', lon: 55.272, lat: 25.205, w: 26 },
+    { name: 'Al Mizhar, Dubai, UAE',    lon: 55.425, lat: 25.248, w: 18 },
+    { name: 'Academic City, Dubai, UAE',lon: 55.482, lat: 25.128, w: 16 },
+    { name: 'Ras Al Khor, Dubai, UAE',  lon: 55.345, lat: 25.182, w: 14 },
+    { name: 'Al Lisaili, Dubai, UAE',   lon: 55.552, lat: 24.962, w: 11 },
+    { name: 'Deira, Dubai, UAE',        lon: 55.318, lat: 25.271, w: 9 },
+    { name: 'Business Bay, Dubai, UAE', lon: 55.268, lat: 25.186, w: 7 },
+    { name: 'Bur Dubai, Dubai, UAE',    lon: 55.297, lat: 25.252, w: 6 }
+  ];
+  const MONTH_W = [82, 104, 96, 110, 100, 122, 112, 118, 104, 126, 114, 120];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const SEV_COLOR = { high: '#ed4956', medium: '#f5a524', low: '#3e8ef7' };
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* ─── Seeded RNG (deterministic per category) ─── */
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  const rng = mulberry32(hashStr(CONFIG.category));
+  function wpick(items, weights) {
+    const tot = weights.reduce((s, w) => s + w, 0);
+    let r = rng() * tot;
+    for (let i = 0; i < items.length; i++) { r -= weights[i]; if (r <= 0) return i; }
+    return items.length - 1;
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+
+  /* ─── Generate the row-level dataset ─── */
+  const SEV_KEYS = ['high', 'medium', 'low'];
+  const STATUS_KEYS = ['new', 'pending', 'resolved'];
+  const ALL_ROWS = [];
+  (function generate() {
+    const sevW = SEV_KEYS.map(k => CONFIG.sevWeights[k]);
+    const stW = STATUS_KEYS.map(k => CONFIG.statusWeights[k]);
+    const locW = LOCATIONS.map(l => l.w);
+    for (let i = 0; i < CONFIG.total; i++) {
+      const sev = SEV_KEYS[wpick(SEV_KEYS, sevW)];
+      const status = STATUS_KEYS[wpick(STATUS_KEYS, stW)];
+      const type = TYPES[wpick(TYPES, TYPE_W)];
+      const vIdx = wpick(VEHICLE_SUFFIX, VEHICLE_W);
+      const vehicle = CONFIG.vehiclePrefix + ' ' + VEHICLE_SUFFIX[vIdx];
+      const li = wpick(LOCATIONS, locW);
+      const loc = LOCATIONS[li];
+      const month = wpick(MONTHS, MONTH_W);
+      const day = 1 + Math.floor(rng() * 28);
+      const hh = Math.floor(rng() * 24), mm = Math.floor(rng() * 60), ss = Math.floor(rng() * 60);
+      const ts = new Date(2025, month, day, hh, mm, ss).getTime();
+      ALL_ROWS.push({
+        type, vehicle, severity: sev, status, locName: loc.name,
+        lon: loc.lon + (rng() - .5) * .03, lat: loc.lat + (rng() - .5) * .03,
+        driver: '00' + (10000000 + Math.floor(rng() * 89999999)),
+        ts,
+        time: `${pad(day)}/${pad(month + 1)}/25 ${pad(hh)}:${pad(mm)}:${pad(ss)}`
+      });
+    }
+  })();
+
+  /* ─── Filter state + helpers ─── */
+  const F = { severity: '', status: '', type: '', vehicle: '', location: '', month: '' };
+  function filtered() {
+    return ALL_ROWS.filter(r =>
+      (!F.severity || r.severity === F.severity) &&
+      (!F.status   || r.status === F.status) &&
+      (!F.type     || r.type === F.type) &&
+      (!F.vehicle  || r.vehicle === F.vehicle) &&
+      (!F.location || r.locName === F.location) &&
+      (F.month === '' || new Date(r.ts).getMonth() === F.month)
+    );
+  }
+  function setFilter(key, val) {
+    F[key] = (F[key] === val) ? '' : val;   // toggle
+    syncControls();
+    renderAll();
+  }
+
+  /* populate the Type dropdown */
+  (function () {
+    const sel = document.getElementById('fType');
+    TYPES.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+  })();
+
+  /* ════════════════════════════════════════════════════════════════
+   *  RENDERERS
+   * ════════════════════════════════════════════════════════════════ */
+  const mk = (tag, a) => { const el = document.createElementNS(SVGNS, tag); for (const k in a) el.setAttribute(k, a[k]); return el; };
+  const fmt = (n) => n.toLocaleString();
+
+  function renderKPIs(rows) {
+    const by = (k, v) => rows.filter(r => r[k] === v).length;
+    document.getElementById('kNew').textContent = fmt(by('status', 'new'));
+    document.getElementById('kPending').textContent = fmt(by('status', 'pending'));
+    document.getElementById('kResolved').textContent = fmt(by('status', 'resolved'));
+    document.getElementById('kHigh').textContent = fmt(by('severity', 'high'));
+    document.getElementById('kMed').textContent = fmt(by('severity', 'medium'));
+    document.getElementById('kLow').textContent = fmt(by('severity', 'low'));
+    document.querySelectorAll('.kpi.sev').forEach(el => {
+      const s = el.dataset.sev;
+      el.classList.toggle('on', F.severity === s);
+      el.classList.toggle('dim', F.severity && F.severity !== s);
+    });
+  }
+
+  function renderChart(rows) {
+    const svg = document.getElementById('violChart');
+    const tip = document.getElementById('violTip');
+    svg.innerHTML = '';
+    const W = 660, H = 300, x0 = 56, x1 = 636, yTop = 26, yBot = 250, n = 12;
+    const X = i => x0 + i * (x1 - x0) / (n - 1);
+
+    const series = { high: Array(12).fill(0), medium: Array(12).fill(0), low: Array(12).fill(0) };
+    rows.forEach(r => { series[r.severity][new Date(r.ts).getMonth()]++; });
+
+    const dataMax = Math.max(1, ...series.high, ...series.medium, ...series.low);
+    function niceMax(v) {
+      const steps = 5, rawStep = (v * 1.08) / steps;
+      const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const norm = rawStep / mag;
+      const ns = (norm <= 1 ? 1 : norm <= 1.5 ? 1.5 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5
+                 : norm <= 3 ? 3 : norm <= 4 ? 4 : norm <= 5 ? 5 : 10) * mag;
+      return Math.max(ns * steps, steps);
+    }
+    const yMax = niceMax(dataMax), yStep = yMax / 5;
+    const Y = v => yBot - (v / yMax) * (yBot - yTop);
+
+    const defs = mk('defs', {});
+    [['low', 'gLow'], ['medium', 'gMed'], ['high', 'gHigh']].forEach(([k, id]) => {
+      const g = mk('linearGradient', { id, x1: 0, y1: 0, x2: 0, y2: 1 });
+      g.appendChild(mk('stop', { offset: '0', 'stop-color': SEV_COLOR[k], 'stop-opacity': '.26' }));
+      g.appendChild(mk('stop', { offset: '1', 'stop-color': SEV_COLOR[k], 'stop-opacity': '0' }));
+      defs.appendChild(g);
+    });
+    svg.appendChild(defs);
+
+    for (let v = 0; v <= yMax + 0.5; v += yStep) {
+      svg.appendChild(mk('line', { x1: x0, y1: Y(v), x2: x1, y2: Y(v), stroke: '#eef0f4', 'stroke-width': 1 }));
+      const t = mk('text', { x: x0 - 10, y: Y(v) + 3.5, fill: '#aeb6c4', 'font-size': 10, 'font-family': 'Inter', 'text-anchor': 'end' });
+      t.textContent = Math.round(v); svg.appendChild(t);
+    }
+    MONTHS.forEach((m, i) => {
+      const t = mk('text', { x: X(i), y: yBot + 20, fill: '#8a93a6', 'font-size': 10, 'font-family': 'Inter', 'text-anchor': 'middle' });
+      t.textContent = m; svg.appendChild(t);
+    });
+
+    function smooth(pts) {
+      let d = `M${pts[0].x},${pts[0].y}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        d += ` C${p1.x + (p2.x - p0.x) / 6},${p1.y + (p2.y - p0.y) / 6} ${p2.x - (p3.x - p1.x) / 6},${p2.y - (p3.y - p1.y) / 6} ${p2.x},${p2.y}`;
+      }
+      return d;
+    }
+    [['low', 'url(#gLow)'], ['medium', 'url(#gMed)'], ['high', 'url(#gHigh)']].forEach(([k, grad]) => {
+      const pts = series[k].map((v, i) => ({ x: X(i), y: Y(v) }));
+      const line = smooth(pts);
+      svg.appendChild(mk('path', { d: `${line} L${X(n - 1)},${yBot} L${X(0)},${yBot} Z`, fill: grad, stroke: 'none' }));
+      svg.appendChild(mk('path', { d: line, fill: 'none', stroke: SEV_COLOR[k], 'stroke-width': 2 }));
+    });
+
+    const guide = mk('line', { x1: 0, y1: yTop, x2: 0, y2: yBot, stroke: '#cbd2dd', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: 0 });
+    svg.appendChild(guide);
+    const dots = SEV_KEYS.map(k => { const d = mk('circle', { r: 4, fill: SEV_COLOR[k], stroke: '#fff', 'stroke-width': 1.5, opacity: 0 }); svg.appendChild(d); return d; });
+
+    function moveTo(i) {
+      const gx = X(i);
+      guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); guide.setAttribute('opacity', 1);
+      const vals = SEV_KEYS.map(k => series[k][i]);
+      dots.forEach((d, j) => { d.setAttribute('cx', gx); d.setAttribute('cy', Y(series[SEV_KEYS[j]][i])); d.setAttribute('opacity', 1); });
+      tip.innerHTML = `<div class="tip-h">${MONTHS_FULL[i]}</div>
+         <div class="tip-r"><i style="background:#ed4956"></i>High <b>${fmt(vals[0])}</b></div>
+         <div class="tip-r"><i style="background:#f5a524"></i>Medium <b>${fmt(vals[1])}</b></div>
+         <div class="tip-r"><i style="background:#3e8ef7"></i>Low <b>${fmt(vals[2])}</b></div>`;
+      const rect = svg.getBoundingClientRect();
+      const leftPx = svg.offsetLeft + (gx / W) * rect.width;
+      const topPx = svg.offsetTop + (Y(Math.max(...vals)) / H) * rect.height;
+      let lx = leftPx + 14; if (lx + 140 > svg.offsetLeft + rect.width) lx = leftPx - 154;
+      tip.style.left = lx + 'px'; tip.style.top = Math.max(topPx - 10, 4) + 'px'; tip.style.opacity = 1;
+    }
+    svg.onmousemove = e => {
+      const rect = svg.getBoundingClientRect();
+      const sx = (e.clientX - rect.left) * W / rect.width;
+      let i = Math.round((sx - x0) / ((x1 - x0) / (n - 1)));
+      moveTo(Math.max(0, Math.min(n - 1, i)));
+    };
+    svg.onmouseleave = () => { guide.setAttribute('opacity', 0); dots.forEach(d => d.setAttribute('opacity', 0)); tip.style.opacity = 0; };
+  }
+
+  function renderVolBars(rows) {
+    const counts = {};
+    rows.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
+    const ranked = TYPES.map(t => [t, counts[t] || 0]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = Math.max(1, ...ranked.map(r => r[1]));
+    const mount = document.getElementById('volBars');
+    mount.innerHTML = '';
+    ranked.forEach(([type, val]) => {
+      const div = document.createElement('div');
+      div.className = 'vbar' + (F.type === type ? ' on' : (F.type ? ' dim' : ''));
+      div.innerHTML = `<div class="vbar-top"><span class="vb-name">PTSM - ${type}</span><span class="vb-val">${fmt(val)}</span></div>
+        <div class="vbar-track"><div class="vbar-fill" style="width:${Math.max(val / max * 100, 2)}%"></div></div>`;
+      div.onclick = () => setFilter('type', type);
+      mount.appendChild(div);
+    });
+  }
+
+  function renderVehBars(rows) {
+    const byVeh = {};
+    rows.forEach(r => {
+      byVeh[r.vehicle] = byVeh[r.vehicle] || { total: 0, high: 0, medium: 0, low: 0 };
+      byVeh[r.vehicle].total++; byVeh[r.vehicle][r.severity]++;
+    });
+    const ranked = Object.entries(byVeh).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
+    const max = Math.max(1, ...ranked.map(r => r[1].total));
+    const mount = document.getElementById('vehBars');
+    mount.innerHTML = '';
+    ranked.forEach(([veh, d]) => {
+      const scale = d.total / max * 100;
+      const seg = (c, v) => v > 0 ? `<span class="${c}" style="width:${v / d.total * scale}%"></span>` : '';
+      const div = document.createElement('div');
+      div.className = 'svbar' + (F.vehicle === veh ? ' on' : (F.vehicle ? ' dim' : ''));
+      div.innerHTML = `<div class="sv-lbl">${veh}</div>
+        <div class="sv-track">${seg('seg-red', d.high)}${seg('seg-amber', d.medium)}${seg('seg-blue', d.low)}</div>
+        <div class="sv-val">${fmt(d.total)}</div>`;
+      div.onclick = () => setFilter('vehicle', veh);
+      mount.appendChild(div);
+    });
+  }
+
+  function renderTable(rows) {
+    const sorted = [...rows].sort((a, b) => b.ts - a.ts).slice(0, 4);
+    const tb = document.getElementById('alertRows');
+    tb.innerHTML = '';
+    if (!sorted.length) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">No alerts match the current filters.</td></tr>';
+    } else {
+      sorted.forEach(r => {
+        const tr = document.createElement('tr');
+        if (F.type === r.type) tr.className = 'on';
+        const sevLabel = r.severity === 'high' ? 'Major' : r.severity === 'medium' ? 'Moderate' : 'Minor';
+        tr.innerHTML = `<td class="t-strong">${CONFIG.category} - ${r.type}</td><td></td><td>${r.vehicle}</td>
+          <td><span class="pill ${r.severity}"><span class="dot"></span>${sevLabel}</span></td>
+          <td>${r.driver}</td>
+          <td><div class="t-strong">${r.time}</div><div class="tsub">${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}</div></td>`;
+        tr.onclick = () => setFilter('type', r.type);
+        tb.appendChild(tr);
+      });
+    }
+    document.getElementById('tblInfo').textContent =
+      `Showing 1 to ${Math.min(4, rows.length)} of ${fmt(rows.length)} entries`;
+  }
+
+  function renderLocations(rows) {
+    const counts = {};
+    rows.forEach(r => { counts[r.locName] = (counts[r.locName] || 0) + 1; });
+    const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const mount = document.getElementById('locList');
+    mount.innerHTML = '';
+    ranked.slice(0, 5).forEach(([name, val], i) => {
+      const div = document.createElement('div');
+      div.className = 'loc' + (F.location === name ? ' on' : (F.location ? ' dim' : ''));
+      div.innerHTML = `<span class="rank">${i + 1}</span><div><div class="lname">${name}</div><div class="lsev">Major</div></div>
+        <div class="lval"><div class="lnum">${fmt(val)}</div><div class="lunit">Incidents</div></div>`;
+      div.onclick = () => setFilter('location', name);
+      mount.appendChild(div);
+    });
+    document.getElementById('locBadge').textContent = ranked.length + ' locations';
+  }
+
+  function renderDonut(rows) {
+    const svg = document.getElementById('sevDonut');
+    svg.innerHTML = '';
+    const c = { high: 0, medium: 0, low: 0 };
+    rows.forEach(r => c[r.severity]++);
+    const total = c.high + c.medium + c.low;
+    const cx = 80, cy = 80, r = 62, C = 2 * Math.PI * r;
+    svg.appendChild(mk('circle', { cx, cy, r, fill: 'none', stroke: '#eef0f4', 'stroke-width': 16 }));
+    let offset = 0;
+    SEV_KEYS.forEach(k => {
+      const frac = total ? c[k] / total : 0, len = frac * C;
+      const seg = mk('circle', {
+        cx, cy, r, fill: 'none', stroke: SEV_COLOR[k], 'stroke-width': 16,
+        'stroke-dasharray': `${Math.max(len - 2, 0)} ${C - Math.max(len - 2, 0)}`,
+        'stroke-dashoffset': -offset, transform: `rotate(-90 ${cx} ${cy})`,
+        class: 'seg', opacity: (F.severity && F.severity !== k) ? 0.28 : 1
+      });
+      seg.addEventListener('click', () => setFilter('severity', k));
+      svg.appendChild(seg);
+      offset += len;
+    });
+    document.getElementById('sevTotal').textContent = fmt(total);
+    document.getElementById('dHigh').textContent = fmt(c.high);
+    document.getElementById('dMed').textContent = fmt(c.medium);
+    document.getElementById('dLow').textContent = fmt(c.low);
+  }
+
+  /* ─── Map (clustered, same approach as performance.html) ─── */
+  let mapInstance = null, mapReady = false;
+  function rowsToGeoJSON(rows) {
+    return { type: 'FeatureCollection', features: rows.map(r => ({
+      type: 'Feature', properties: { severity: r.severity },
+      geometry: { type: 'Point', coordinates: [r.lon, r.lat] }
+    })) };
+  }
+  function initMap() {
+    if (!window.mapboxgl) return;
+    mapboxgl.accessToken = "pk.eyJ1IjoicmFlZGR3ZWlrIiwiYSI6ImNtMTZqZGtpeTBta2cydnM4NjBkenhsMG8ifQ.r3ufHWJMoGh_DCH3XDhDAg";
+    mapInstance = new mapboxgl.Map({
+      container: 'catmap',
+      style: 'mapbox://styles/raeddweik/cmpjd3783006901s2d7hi5ttp',
+      center: [55.36, 25.16], zoom: 9.4, attributionControl: false
+    });
+    mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+    mapInstance.on('load', () => {
+      mapInstance.addSource('viol', {
+        type: 'geojson',
+        data: rowsToGeoJSON(filtered()),
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 55,
+        clusterProperties: {
+          high_count: ['+', ['case', ['==', ['get', 'severity'], 'high'], 1, 0]]
+        }
+      });
+
+      // Cluster bubbles — colour by share of high-severity alerts
+      mapInstance.addLayer({
+        id: 'clusters', type: 'circle', source: 'viol', filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': ['step', ['/', ['get', 'high_count'], ['max', ['get', 'point_count'], 1]],
+            '#3e8ef7', 0.10, '#f5a524', 0.25, '#ed4956'],
+          'circle-radius': ['step', ['get', 'point_count'], 16, 50, 22, 150, 30, 400, 40],
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3, 'circle-opacity': 0.55
+        }
+      });
+      mapInstance.addLayer({
+        id: 'cluster-count', type: 'symbol', source: 'viol', filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': ['step', ['get', 'point_count'], 12, 50, 13, 150, 14, 400, 16]
+        },
+        paint: { 'text-color': '#ffffff', 'text-halo-color': 'rgba(0,0,0,0.55)', 'text-halo-width': 1.4 }
+      });
+      mapInstance.addLayer({
+        id: 'unclustered-point', type: 'circle', source: 'viol', filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['match', ['get', 'severity'], 'high', '#ed4956', 'medium', '#f5a524', 'low', '#3e8ef7', '#3e8ef7'],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 6, 17, 9],
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.4, 'circle-opacity': 0.55
+        }
+      });
+
+      // Click a cluster → zoom in to expand it
+      mapInstance.on('click', 'clusters', (e) => {
+        const feats = mapInstance.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        const id = feats[0].properties.cluster_id;
+        mapInstance.getSource('viol').getClusterExpansionZoom(id, (err, zoom) => {
+          if (err) return;
+          mapInstance.easeTo({ center: feats[0].geometry.coordinates, zoom });
+        });
+      });
+      mapInstance.on('mouseenter', 'clusters', () => mapInstance.getCanvas().style.cursor = 'pointer');
+      mapInstance.on('mouseleave', 'clusters', () => mapInstance.getCanvas().style.cursor = '');
+
+      mapReady = true;
+    });
+  }
+  function renderMap(rows) {
+    if (mapReady && mapInstance.getSource('viol')) mapInstance.getSource('viol').setData(rowsToGeoJSON(rows));
+  }
+
+  /* ─── Active-filter chips ─── */
+  function renderChips() {
+    const mount = document.getElementById('chips');
+    mount.innerHTML = '';
+    const labels = {
+      severity: { key: 'Severity', val: v => v.charAt(0).toUpperCase() + v.slice(1) },
+      status:   { key: 'Status',   val: v => v.charAt(0).toUpperCase() + v.slice(1) },
+      type:     { key: 'Type',     val: v => v },
+      vehicle:  { key: 'Vehicle',  val: v => v },
+      location: { key: 'Location', val: v => v.split(',')[0] },
+      month:    { key: 'Date',     val: v => MONTHS_FULL[v] + ' 2025' }
+    };
+    let any = false;
+    Object.keys(labels).forEach(k => {
+      if (F[k] === '' || F[k] == null) return;
+      any = true;
+      const chip = document.createElement('div');
+      chip.className = 'chip-f';
+      chip.innerHTML = `${labels[k].key}: ${labels[k].val(F[k])} <span class="x">✕</span>`;
+      chip.querySelector('.x').onclick = () => { F[k] = ''; syncControls(); renderAll(); };
+      mount.appendChild(chip);
+    });
+    if (any) {
+      const clr = document.createElement('span');
+      clr.className = 'chip-clear'; clr.textContent = 'Clear all';
+      clr.onclick = () => { F.severity = F.status = F.type = F.vehicle = F.location = F.month = ''; syncControls(); renderAll(); };
+      mount.appendChild(clr);
+    }
+  }
+  function syncControls() {
+    document.getElementById('fSeverity').value = F.severity;
+    document.getElementById('fStatus').value = F.status;
+    document.getElementById('fType').value = F.type;
+    document.getElementById('dateLbl').textContent = F.month === '' ? 'Pick a date' : MONTHS_FULL[F.month] + ' 2025';
+  }
+
+  /* ─── Master render ─── */
+  function renderAll() {
+    const rows = filtered();
+    renderKPIs(rows);
+    renderChart(rows);
+    renderVolBars(rows);
+    renderVehBars(rows);
+    renderTable(rows);
+    renderLocations(rows);
+    renderDonut(rows);
+    renderMap(rows);
+    renderChips();
+  }
+
+  /* ─── Wire up dropdowns ─── */
+  document.getElementById('fSeverity').onchange = e => { F.severity = e.target.value; renderAll(); };
+  document.getElementById('fStatus').onchange   = e => { F.status = e.target.value; renderAll(); };
+  document.getElementById('fType').onchange     = e => { F.type = e.target.value; renderAll(); };
+
+  /* ─── Date (month) picker ─── */
+  (function () {
+    const btn = document.getElementById('dateBtn');
+    const pop = document.getElementById('datePop');
+    const opts = [['', 'All dates']].concat(MONTHS_FULL.map((m, i) => [String(i), m + ' 2025']));
+    function build() {
+      pop.innerHTML = '';
+      const cur = F.month === '' ? '' : String(F.month);
+      opts.forEach(([v, txt]) => {
+        const d = document.createElement('div');
+        d.className = 'date-pop-item' + (v === cur ? ' on' : '');
+        d.textContent = txt;
+        d.onclick = (e) => {
+          e.stopPropagation();
+          F.month = (v === '') ? '' : parseInt(v, 10);
+          pop.classList.remove('open');
+          syncControls(); renderAll();
+        };
+        pop.appendChild(d);
+      });
+    }
+    btn.onclick = (e) => { e.stopPropagation(); build(); pop.classList.toggle('open'); };
+    document.addEventListener('click', (e) => { if (!pop.contains(e.target) && !btn.contains(e.target)) pop.classList.remove('open'); });
+  })();
+
+  initMap();
+  renderAll();
+</script>
+</body>
+</html>
