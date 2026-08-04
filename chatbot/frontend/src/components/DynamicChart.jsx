@@ -8,12 +8,12 @@ import {
 const PALETTE = ['#2dd4a7', '#38bdf8', '#f0b429', '#ef5350', '#a78bfa', '#43e8bc', '#fb923c', '#8fb3a0'];
 
 const tooltipStyle = {
-  background: 'rgba(42,46,52,0.98)',
+  background: 'rgba(9,18,14,0.97)',
   border: '1px solid rgba(46,229,157,0.30)',
   borderRadius: '8px',
   fontSize: '11.5px',
   padding: '6px 10px',
-  color: '#f2f4f6',
+  color: '#eef8f2',
   boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
 };
 
@@ -63,14 +63,14 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
     return (
       <BarChart data={data} margin={{ top: 8, right: 14, left: -8, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-        <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#98a0a6' }}
+        <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8aa695' }}
           axisLine={{ stroke: 'rgba(255,255,255,0.15)' }} tickLine={false}
           interval={0}
           angle={shouldRotate ? -30 : 0}
           textAnchor={shouldRotate ? 'end' : 'middle'}
           height={axisHeight}
           tickFormatter={truncate} />
-        <YAxis tick={{ fontSize: 10, fill: '#98a0a6' }} axisLine={false} tickLine={false}
+        <YAxis tick={{ fontSize: 10, fill: '#8aa695' }} axisLine={false} tickLine={false}
           label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fontSize: 10, offset: 12 } : null} />
         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
         {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
@@ -94,8 +94,8 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
   if (type === 'line') return (
     <LineChart data={data} margin={{ top: 8, right: 14, left: -8, bottom: 4 }}>
       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#98a0a6' }} tickLine={false} />
-      <YAxis tick={{ fontSize: 10, fill: '#98a0a6' }} axisLine={false} tickLine={false}
+      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8aa695' }} tickLine={false} />
+      <YAxis tick={{ fontSize: 10, fill: '#8aa695' }} axisLine={false} tickLine={false}
         domain={annotations.find(a => a.type === 'reference') ? ['auto', 'auto'] : [0, 'auto']} />
       <Tooltip contentStyle={tooltipStyle} />
       {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
@@ -122,8 +122,8 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
         ))}
       </defs>
       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#98a0a6' }} tickLine={false} />
-      <YAxis tick={{ fontSize: 10, fill: '#98a0a6' }} axisLine={false} tickLine={false} />
+      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8aa695' }} tickLine={false} />
+      <YAxis tick={{ fontSize: 10, fill: '#8aa695' }} axisLine={false} tickLine={false} />
       <Tooltip contentStyle={tooltipStyle} />
       {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
       {yKeys.map((yk, i) => (
@@ -152,8 +152,8 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
   if (type === 'scatter') return (
     <ScatterChart margin={{ top: 8, right: 14, left: 0, bottom: 4 }}>
       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-      <XAxis dataKey={xKey} type="number" tick={{ fontSize: 10, fill: '#98a0a6' }} />
-      <YAxis dataKey={yKeys[0].key} type="number" tick={{ fontSize: 10, fill: '#98a0a6' }} />
+      <XAxis dataKey={xKey} type="number" tick={{ fontSize: 10, fill: '#8aa695' }} />
+      <YAxis dataKey={yKeys[0].key} type="number" tick={{ fontSize: 10, fill: '#8aa695' }} />
       <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: '3 3' }} />
       <Scatter data={data} fill={yKeys[0].color || PALETTE[0]} />
     </ScatterChart>
