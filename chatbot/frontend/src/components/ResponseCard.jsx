@@ -18,16 +18,16 @@ export default function ResponseCard({ data }) {
     h3: ({node, ...props}) => <h3 className="text-[13px] font-semibold my-1.5" style={{ color: 'var(--gold)' }} {...props} />,
     table: ({node, ...props}) => (
       <div className="my-2 overflow-x-auto">
-        <table className="border-collapse text-[12px] w-full" style={{ border: '1px solid rgba(45,212,167,0.20)' }} {...props} />
+        <table className="border-collapse text-[12px] w-full" style={{ border: '1px solid rgba(255,255,255,0.14)' }} {...props} />
       </div>
     ),
-    thead: ({node, ...props}) => <thead style={{ background: 'rgba(45,212,167,0.08)' }} {...props} />,
-    th: ({node, ...props}) => <th className="px-2 py-1.5 text-start font-semibold" style={{ border: '1px solid rgba(45,212,167,0.20)', color: 'var(--gold-hi)' }} {...props} />,
-    td: ({node, ...props}) => <td className="px-2 py-1.5" style={{ border: '1px solid rgba(45,212,167,0.12)' }} {...props} />,
+    thead: ({node, ...props}) => <thead style={{ background: 'rgba(46,229,157,0.09)' }} {...props} />,
+    th: ({node, ...props}) => <th className="px-2 py-1.5 text-start font-semibold" style={{ border: '1px solid rgba(255,255,255,0.14)', color: 'var(--gold-hi)' }} {...props} />,
+    td: ({node, ...props}) => <td className="px-2 py-1.5" style={{ border: '1px solid rgba(255,255,255,0.10)' }} {...props} />,
     // react-markdown v10 has no `inline` prop — style code inline; fenced blocks
     // keep their <pre> wrapper.
     code: ({node, ...props}) => <code className="px-1 py-0.5 rounded text-[12px]" style={{ background: 'rgba(45,212,167,0.10)', color: 'var(--gold-hi)' }} {...props} />,
-    pre: ({node, ...props}) => <pre className="p-2 rounded my-1 text-[12px] overflow-x-auto" dir="ltr" style={{ background: 'rgba(0,0,0,0.30)' }} {...props} />,
+    pre: ({node, ...props}) => <pre className="p-2 rounded my-1 text-[12px] overflow-x-auto" dir="ltr" style={{ background: 'rgba(0,0,0,0.22)' }} {...props} />,
     blockquote: ({node, ...props}) => <blockquote className="ps-3 my-2 italic" style={{ borderInlineStart: '2px solid var(--gold-lo)', color: 'var(--text-md)' }} {...props} />,
   };
 
