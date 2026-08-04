@@ -30,10 +30,10 @@ function CenterLockup() {
 
 export default function Header() {
   // Official assets in frontend/public/: police.png (Dubai Police lockup) and
-  // sas.png (SAS logo). Until they exist, police falls back to the neutral
-  // badge + wordmark and the SAS slot stays hidden.
+  // center.png (SAS + Security Analytics & Forecast Center lockup). Each slot
+  // falls back to the typographic version if its image is missing.
   const [policeOk, setPoliceOk] = useState(true);
-  const [sasOk, setSasOk] = useState(true);
+  const [centerOk, setCenterOk] = useState(true);
 
   // "الرجوع للصفحة الرئيسية": target from ?home=<url> (set when the dashboard
   // links here), otherwise browser back.
@@ -47,7 +47,7 @@ export default function Header() {
 
   return (
     <header className="topbar">
-      {/* Brand cluster — right side in RTL: police | divider | sas | centre lockup */}
+      {/* Brand cluster — right side in RTL: police | divider | centre+SAS lockup */}
       <div className="brand">
         {policeOk ? (
           <img className="police-logo" src="/police.png" alt="شرطة دبي — Dubai Police"
@@ -62,11 +62,13 @@ export default function Header() {
           </>
         )}
         <div className="divider" />
-        {sasOk && (
-          <img className="sas-logo" src="/sas.png" alt="SAS"
-            onError={() => setSasOk(false)} />
+        {centerOk ? (
+          <img className="center-logo" src="/center.png"
+            alt="مركز التحليل والتنبؤ الأمني — Security Analytics & Forecast Center"
+            onError={() => setCenterOk(false)} />
+        ) : (
+          <CenterLockup />
         )}
-        <CenterLockup />
       </div>
 
       <div className="flex-1" />

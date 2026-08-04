@@ -63,23 +63,13 @@ html, body {
   display: flex; flex-direction: column;
   gap: 14px;
   padding: 16px 20px;
-  background:
-    radial-gradient(ellipse 52% 48% at 76% -8%,  rgba(52, 182, 141, 0.42) 0%, transparent 64%),
-    radial-gradient(ellipse 38% 40% at 103% 22%, rgba(42, 145, 112, 0.20) 0%, transparent 68%),
-    radial-gradient(ellipse 26% 30% at -4% 100%, rgba(42, 140, 108, 0.13) 0%, transparent 66%),
-    radial-gradient(ellipse 22% 26% at -3% 42%,  rgba(38, 120, 95, 0.08) 0%, transparent 66%),
-    linear-gradient(150deg, #141a17 0%, #0e1412 45%, #0b110e 100%);
-}
-.app-shell::before {
-  content: '';
-  position: absolute; inset: 0 0 auto 0; height: 150px;
+  background-color: #0d1311;
   background-image:
-    radial-gradient(circle at 1.5px 1.5px, rgba(80, 220, 175, 0.16) 1px, transparent 1.5px),
-    radial-gradient(circle at 1px 5px,   rgba(80, 220, 175, 0.09) 1px, transparent 1.4px);
-  background-size: 7px 13px, 11px 17px;
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
-  pointer-events: none; z-index: 0;
+    url('/bg.png'),
+    radial-gradient(ellipse 52% 48% at 76% -8%,  rgba(52, 182, 141, 0.42) 0%, transparent 64%),
+    linear-gradient(150deg, #141a17 0%, #0e1412 45%, #0b110e 100%);
+  background-size: cover, auto, auto;
+  background-position: center, center, center;
 }
 
 /* ═══ Top bar ═══ */
@@ -111,9 +101,9 @@ html, body {
 .topbar .brand .wordmark .ar { font-size: 16px; font-weight: 800; color: #35c9a4; }
 .topbar .brand .wordmark .en { font-family: var(--lat); font-size: 9px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #35c9a4; }
 .topbar .divider { width: 1px; height: 38px; background: rgba(255,255,255,0.22); }
-/* Official SAS logo (public/sas.png) — hidden until the asset exists. */
-.topbar .brand .sas-logo {
-  height: 34px; width: auto; object-fit: contain; display: block;
+/* Official SAS + centre lockup (public/center.png). */
+.topbar .brand .center-logo {
+  height: 46px; width: auto; object-fit: contain; display: block;
   filter: drop-shadow(0 1px 4px rgba(0,0,0,0.35));
 }
 /* Bilingual center lockup — pure typography, mirrors the official arrangement:
