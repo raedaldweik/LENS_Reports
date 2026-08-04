@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f5f8;
+    --card: #ffffff;
+    --border: #ecedf1;
+    --ink-1: #1c2740;
+    --ink-2: #4a5468;
+    --muted: #98a1b3;
+    --faint: #c2c8d4;
+    --red: #ed4956;
+    --amber: #f5a524;
+    --blue: #3e8ef7;
+    --green: #22b573;
+    --indigo: #6c5ce7;
+    --shadow: 0 1px 2px rgba(20,28,46,.04), 0 4px 14px rgba(20,28,46,.05);
+    --r: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--ink-1); -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1320px; margin: 0 auto; }
+
+  /* TOP BAR */
+  .topbar { height: 60px; background: var(--card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 26px; gap: 18px; }
+  .topbar .crumb { font-size: 14px; color: var(--ink-2); font-weight: 500; }
+  .topbar .search { margin-left: auto; width: 300px; height: 38px; background: #f4f5f8;
+    border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center;
+    gap: 8px; padding: 0 13px; color: var(--muted); font-size: 13.5px; }
+  .topbar .search svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; }
+  .topbar .icons { display: flex; align-items: center; gap: 16px; }
+  .topbar .ico { width: 18px; height: 18px; stroke: #6b7488; fill: none; stroke-width: 1.8; cursor: pointer; }
+  .topbar .user { display: flex; align-items: center; gap: 9px; padding-left: 6px; }
+  .topbar .avatar { width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg,#9fb4d4,#6b82a8); display:flex; align-items:center;
+    justify-content:center; color:#fff; font-weight:700; font-size:13px; }
+  .topbar .uname { font-size: 13px; font-weight: 700; line-height: 1.2; }
+  .topbar .urole { font-size: 11.5px; color: var(--muted); }
+  .topbar .chev { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+  /* PAGE */
+  .page { padding: 24px 26px 40px; }
+  .page-head { margin-bottom: 20px; }
+  .page-title { font-size: 23px; font-weight: 800; letter-spacing: -.4px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  .card { background: var(--card); border: 1px solid #C6D2E1; border-radius: var(--r); box-shadow: var(--shadow); }
+  .grid { display: grid; gap: 16px; }
+  .row { margin-bottom: 16px; }
+
+  /* KPIs */
+  .kpis { grid-template-columns: repeat(4, 1fr); margin-bottom: 16px; }
+  .kpi { padding: 17px 18px; background: linear-gradient(105deg, #E7EFF8 0%, #F5F8FB 55%, #ffffff 100%); border-color: #ffffff; box-shadow: 0 4px 6px 5px rgba(73, 73, 73, 0.10); }
+  .kpi-top { display: flex; align-items: center; gap: 11px; }
+  .kpi-ico { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kpi-ico svg { width: 20px; height: 20px; fill: none; stroke-width: 1.9; }
+  .ic-blue  { background: #eef5fe; } .ic-blue svg  { stroke: var(--blue); }
+  .ic-amber { background: #fff7ea; } .ic-amber svg { stroke: var(--amber); }
+  .ic-green { background: #e9f8f1; } .ic-green svg { stroke: var(--green); }
+  .ic-indigo{ background: #f0eefc; } .ic-indigo svg{ stroke: var(--indigo); }
+  .kpi-lbl { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .kpi-row2 { display: flex; align-items: flex-end; gap: 8px; margin-top: 13px; }
+  .kpi-num { font-size: 27px; font-weight: 800; letter-spacing: -.6px; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .kpi-foot { display: flex; align-items: center; margin-top: 9px; font-size: 12px; }
+  .trend { display: flex; align-items: center; gap: 3px; font-weight: 600; }
+  .trend.up { color: var(--green); } .trend.down { color: var(--red); }
+  .trend svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .chip { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+  .chip.amber { background: #fff7ea; color: #c4820e; }
+  .chip.green { background: #e9f8f1; color: #15875a; }
+  .chip.gray  { background: #f1f2f5; color: var(--ink-2); }
+  .foot-right { margin-left: auto; color: var(--muted); }
+
+  /* Panel header */
+  .ph { display: flex; align-items: center; padding: 16px 19px; border-bottom: 1px solid #f1f2f5; }
+  .ph.noline { border-bottom: none; }
+  .ph-title { font-size: 15.5px; font-weight: 700; }
+  .ph-count { color: var(--muted); font-weight: 600; margin-left: 7px; font-size: 14px; }
+  .live { display: inline-flex; align-items: center; gap: 5px; margin-left: 9px; font-size: 10.5px;
+    font-weight: 700; color: var(--green); background: #e9f8f1; padding: 2px 8px; border-radius: 20px; }
+  .live .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .ph-tools { margin-left: auto; display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 12px; }
+  .ph-tools svg { width: 17px; height: 17px; stroke: var(--muted); fill: none; stroke-width: 1.8; cursor: pointer; }
+  .dots { color: var(--faint); margin-left: auto; cursor: pointer; font-size: 18px; letter-spacing: 1px; }
+
+  /* main split */
+  .r-main { grid-template-columns: 1.32fr 1fr; }
+
+  /* Operator monitoring table */
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+    font-weight: 600; text-align: left; padding: 12px 18px; }
+  tbody td { padding: 13px 18px; border-top: 1px solid #f1f2f5; font-size: 13px; vertical-align: middle; }
+  .op-cell { display: flex; align-items: center; gap: 11px; }
+  .op-av { width: 34px; height: 34px; border-radius: 50%; background: #e7ebf2; flex-shrink: 0;
+    display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; color:#7a8699; }
+  .op-name { font-weight: 600; color: var(--ink-1); }
+  .op-team { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .op-team.red { color: var(--red); font-weight: 600; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; }
+  .status .sd { width: 7px; height: 7px; border-radius: 50%; }
+  .st-active .sd { background: var(--green); } .st-active { color: #15875a; }
+  .st-idle .sd { background: var(--amber); } .st-idle { color: #c4820e; }
+  .st-break .sd { background: var(--muted); } .st-break { color: var(--ink-2); }
+  .task-name { font-weight: 600; color: var(--ink-1); }
+  .task-name.red { color: var(--red); }
+  .task-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .score { display: flex; align-items: center; gap: 9px; }
+  .score-bar { width: 70px; height: 6px; border-radius: 4px; background: #eef0f4; overflow: hidden; }
+  .score-bar span { display: block; height: 100%; border-radius: 4px; }
+  .score-val { font-weight: 700; font-size: 13px; width: 22px; }
+  .bar-green span { background: var(--green); } .bar-amber span { background: var(--amber); }
+  .bar-red span { background: var(--red); } .bar-gray span { background: var(--muted); }
+  .act { color: var(--faint); cursor: pointer; font-size: 17px; letter-spacing: 1px; }
+  .act-flash { color: var(--red); margin-right: 6px; }
+  .tfoot { display: flex; align-items: center; padding: 14px 19px; border-top: 1px solid #f1f2f5; }
+  .tfoot .info { font-size: 12px; color: var(--muted); }
+  .tfoot .link { margin-left: auto; font-size: 12.5px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+  /* Active operator cards */
+  .op-cards { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .opc { border: 1px solid var(--border); border-radius: 12px; padding: 13px; }
+  .opc-top { display: flex; align-items: center; gap: 9px; }
+  .opc-av { width: 32px; height: 32px; border-radius: 50%; background: #e7ebf2;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#7a8699; }
+  .opc-name { font-size: 12.5px; font-weight: 700; line-height: 1.1; }
+  .opc-role { font-size: 10.5px; color: var(--muted); }
+  .opc-badge { margin-left: auto; font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .opc-badge.active { background: #e9f8f1; color: #15875a; }
+  .opc-badge.busy { background: #fdeef0; color: var(--red); }
+  .opc-stats { display: flex; justify-content: space-between; margin: 13px 2px 11px; }
+  .opc-stat { text-align: left; }
+  .opc-stat .n { font-size: 14px; font-weight: 800; }
+  .opc-stat .l { font-size: 8.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+  .opc-wl-lbl { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+  .opc-wl { height: 6px; border-radius: 4px; background: #eef0f4; overflow: hidden; }
+  .opc-wl span { display: block; height: 100%; border-radius: 4px; }
+  .wl-green span { background: var(--green); } .wl-amber span { background: var(--amber); } .wl-red span { background: var(--red); }
+  /* draggable operator cards */
+  .opc { cursor: grab; transition: box-shadow .15s ease, transform .15s ease, opacity .15s ease; }
+  .opc:active { cursor: grabbing; }
+  .opc.dragging { opacity: .5; box-shadow: 0 10px 26px rgba(20,28,46,.18); }
+  .op-cards.is-dragging .opc:not(.dragging):hover { border-color: var(--blue); }
+
+  /* bottom row */
+  .r-bottom { grid-template-columns: 1fr 1.4fr 1.4fr; }
+
+  /* Today's summary */
+  .sum { padding: 8px 19px 14px; }
+  .sum-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f2f5; }
+  .sum-row:last-child { border-bottom: none; }
+  .sum-lbl { font-size: 13px; color: var(--ink-2); }
+  .sum-val { margin-left: auto; font-size: 19px; font-weight: 800; }
+  .sum-val.green { color: var(--green); } .sum-val.red { color: var(--red); } .sum-val.amber { color: var(--amber); }
+
+  /* charts */
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--muted); margin-left: auto; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .chart-wrap { padding: 10px 14px 14px; position: relative; }
+  .chart-wrap svg { width: 100%; height: auto; display: block; }
+  .tip { position: absolute; left: 30%; top: 20%; background: #fff; border: 1px solid var(--border);
+    border-radius: 9px; box-shadow: 0 6px 20px rgba(20,28,46,.12); padding: 9px 11px; font-size: 11px; }
+  .tip .tip-h { font-weight: 700; margin-bottom: 6px; }
+  .tip .tip-r { display: flex; align-items: center; gap: 6px; color: var(--ink-2); margin: 2px 0; }
+  .tip .tip-r i { width: 9px; height: 9px; border-radius: 2px; }
+  .tip .tip-r b { margin-left: auto; }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <span class="crumb">Alerts</span>
+      <div class="search">
+        <svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Search...
+      </div>
+      <div class="icons">
+        <svg class="ico" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </div>
+      <div class="user">
+        <div class="avatar">ME</div>
+        <div><div class="uname">Mana El Mansori</div><div class="urole">Supervisor</div></div>
+        <svg class="chev" viewBox="0 0 24 24" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div class="page-title">Team Management</div>
+        <div class="page-sub">Overview of fleet alerts, violations, and resolution status.</div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid kpis">
+        <div class="card kpi">
+          <div class="kpi-top"><div class="kpi-ico ic-blue"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3.2 3.2 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6"/></svg></div><div class="kpi-lbl">Operators Online</div></div>
+          <div class="kpi-row2"><div class="kpi-num">42</div><div class="kpi-sub">/ 48 total</div></div>
+          <div class="kpi-foot"><span class="trend up"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>+4.2%</span></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top"><div class="kpi-ico ic-amber"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 18l9 5 9-5"/></svg></div><div class="kpi-lbl">Active Tasks</div></div>
+          <div class="kpi-row2"><div class="kpi-num">128</div><span class="chip amber" style="margin-bottom:3px">14 Delayed</span></div>
+          <div class="kpi-foot"><span class="trend down"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M15 17H7V9"/></svg>-12 tasks</span></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top"><div class="kpi-ico ic-green"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div><div class="kpi-lbl">SLA Compliance</div></div>
+          <div class="kpi-row2"><div class="kpi-num">98.4%</div><span class="chip green" style="margin-bottom:3px">Target: 95%</span></div>
+          <div class="kpi-foot"><span class="trend up"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>+0.8%</span></div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top"><div class="kpi-ico ic-indigo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="kpi-lbl">Attendance Rate</div></div>
+          <div class="kpi-row2"><div class="kpi-num">92.1%</div><span class="chip gray" style="margin-bottom:3px">6 Absences today</span></div>
+          <div class="kpi-foot"><span class="foot-right">On track</span></div>
+        </div>
+      </div>
+
+      <!-- MAIN: Operator Monitoring + Active Operators -->
+      <div class="grid row r-main">
+        <!-- Operator Monitoring -->
+        <div class="card">
+          <div class="ph">
+            <span class="ph-title">Operator Monitoring</span>
+            <span class="live"><span class="pulse"></span>LIVE</span>
+            <div class="ph-tools">
+              <span>Last Refresh: 12:00:00</span>
+              <svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/></svg>
+              <svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Operator</th><th>Status</th><th>Current Task</th><th>Score</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">SJ</div><div><div class="op-name">Sarah Jenkins</div><div class="op-team">Team Alpha</div></div></div></td>
+                <td><span class="status st-active"><span class="sd"></span>Active</span></td>
+                <td><div class="task-name">Refund Processing #</div><div class="task-sub">04:12 elapsed</div></td>
+                <td><div class="score"><div class="score-bar bar-green"><span style="width:92%"></span></div><span class="score-val">92</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">DC</div><div><div class="op-name">Daniel Chen</div><div class="op-team">Team Beta</div></div></div></td>
+                <td><span class="status st-idle"><span class="sd"></span>Idle</span></td>
+                <td><div class="task-sub" style="font-size:12.5px;margin-top:0">Waiting for assignment</div></td>
+                <td><div class="score"><div class="score-bar bar-amber"><span style="width:76%"></span></div><span class="score-val">76</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">ER</div><div><div class="op-name">Elena Rodriguez</div><div class="op-team red">SLA Overdue</div></div></div></td>
+                <td><span class="status st-active"><span class="sd"></span>Active</span></td>
+                <td><div class="task-name red">Conflict Escalation #911</div><div class="task-sub">18:45 elapsed</div></td>
+                <td><div class="score"><div class="score-bar bar-red"><span style="width:45%"></span></div><span class="score-val">45</span></div></td>
+                <td><span class="act-flash">⚡</span><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">JW</div><div><div class="op-name">James Wilson</div><div class="op-team">Team Alpha</div></div></div></td>
+                <td><span class="status st-break"><span class="sd"></span>Break</span></td>
+                <td><div class="task-name">Lunch (30m)</div></td>
+                <td><div class="score"><div class="score-bar bar-gray"><span style="width:88%"></span></div><span class="score-val">88</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">AO</div><div><div class="op-name">Amara Okafor</div><div class="op-team">Team Alpha</div></div></div></td>
+                <td><span class="status st-active"><span class="sd"></span>Active</span></td>
+                <td><div class="task-name">Tier 3 Verification</div><div class="task-sub">01:50 elapsed</div></td>
+                <td><div class="score"><div class="score-bar bar-green"><span style="width:95%"></span></div><span class="score-val">95</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">JW</div><div><div class="op-name">James Wilson</div><div class="op-team">Team Alpha</div></div></div></td>
+                <td><span class="status st-break"><span class="sd"></span>Break</span></td>
+                <td><div class="task-name">Lunch (30m)</div></td>
+                <td><div class="score"><div class="score-bar bar-gray"><span style="width:88%"></span></div><span class="score-val">88</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+              <tr>
+                <td><div class="op-cell"><div class="op-av">AO</div><div><div class="op-name">Amara Okafor</div><div class="op-team">Team Alpha</div></div></div></td>
+                <td><span class="status st-active"><span class="sd"></span>Active</span></td>
+                <td><div class="task-name">Tier 3 Verification</div><div class="task-sub">01:50 elapsed</div></td>
+                <td><div class="score"><div class="score-bar bar-green"><span style="width:95%"></span></div><span class="score-val">95</span></div></td>
+                <td><span class="act">⋮</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="tfoot"><span class="info">Showing 7 of 20 active operators</span><span class="link">View All Operators</span></div>
+        </div>
+
+        <!-- Active Operators cards -->
+        <div class="card">
+          <div class="ph noline"><span class="ph-title">Active Operators</span><span class="ph-count">120</span><span class="dots">•••</span></div>
+          <div class="op-cards">
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge active">Active</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">70%</span></div><div class="opc-wl wl-amber"><span style="width:70%"></span></div>
+            </div>
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge busy">Busy</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">100%</span></div><div class="opc-wl wl-red"><span style="width:100%"></span></div>
+            </div>
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge busy">Busy</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">100%</span></div><div class="opc-wl wl-red"><span style="width:100%"></span></div>
+            </div>
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge active">Active</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">70%</span></div><div class="opc-wl wl-amber"><span style="width:70%"></span></div>
+            </div>
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge active">Active</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">70%</span></div><div class="opc-wl wl-amber"><span style="width:70%"></span></div>
+            </div>
+            <div class="opc">
+              <div class="opc-top"><div class="opc-av">HM</div><div><div class="opc-name">Hassan Mahmoud</div><div class="opc-role">Operations Operator</div></div><span class="opc-badge active">Active</span></div>
+              <div class="opc-stats"><div class="opc-stat"><div class="n">22</div><div class="l">Assigned</div></div><div class="opc-stat"><div class="n">5</div><div class="l">Resolved</div></div><div class="opc-stat"><div class="n">33</div><div class="l">SLA</div></div><div class="opc-stat"><div class="n">0.6h</div><div class="l">Avg Res</div></div></div>
+              <div class="opc-wl-lbl">Workload <span style="float:right">70%</span></div><div class="opc-wl wl-amber"><span style="width:70%"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM: Summary + Workload + Performance -->
+      <div class="grid row r-bottom">
+        <!-- Today's Summary -->
+        <div class="card">
+          <div class="ph"><span class="ph-title">Today's Summary</span></div>
+          <div class="sum">
+            <div class="sum-row"><span class="sum-lbl">Resolved today</span><span class="sum-val">17</span></div>
+            <div class="sum-row"><span class="sum-lbl">SLA breaches</span><span class="sum-val red">34</span></div>
+            <div class="sum-row"><span class="sum-lbl">Fines issued</span><span class="sum-val">0</span></div>
+            <div class="sum-row"><span class="sum-lbl">Awaiting action</span><span class="sum-val amber">51</span></div>
+          </div>
+        </div>
+
+        <!-- Workload Distribution -->
+        <div class="card">
+          <div class="ph"><span class="ph-title">Workload Distribution</span>
+            <div class="legend"><span><i style="background:var(--indigo)"></i>Assigned</span><span><i style="background:var(--green)"></i>Resolved</span></div>
+          </div>
+          <div class="chart-wrap">
+            <svg viewBox="0 0 480 250" preserveAspectRatio="none">
+              <g stroke="#eef0f4" stroke-width="1">
+                <line x1="46" y1="20" x2="470" y2="20"/><line x1="46" y1="62" x2="470" y2="62"/>
+                <line x1="46" y1="104" x2="470" y2="104"/><line x1="46" y1="146" x2="470" y2="146"/>
+                <line x1="46" y1="188" x2="470" y2="188"/><line x1="46" y1="210" x2="470" y2="210"/>
+              </g>
+              <g fill="#aeb6c4" font-size="9" font-family="Inter" text-anchor="end">
+                <text x="40" y="24">1000.00</text><text x="40" y="66">800.00</text><text x="40" y="108">600.00</text>
+                <text x="40" y="150">400.00</text><text x="40" y="192">200.00</text><text x="40" y="214">0</text>
+              </g>
+              <text x="46" y="234" fill="#c2c8d4" font-size="9" font-family="Inter">Y-axis Label (Unit)</text>
+              <!-- groups -->
+              <g>
+                <!-- Fatima -->
+                <rect x="66"  y="80"  width="18" height="130" rx="2" fill="#6c5ce7"/>
+                <rect x="86"  y="120" width="18" height="90"  rx="2" fill="#22b573"/>
+                <!-- Rashid -->
+                <rect x="146" y="60"  width="18" height="150" rx="2" fill="#6c5ce7"/>
+                <rect x="166" y="150" width="18" height="60"  rx="2" fill="#22b573"/>
+                <!-- Hassan -->
+                <rect x="226" y="105" width="18" height="105" rx="2" fill="#6c5ce7"/>
+                <rect x="246" y="135" width="18" height="75"  rx="2" fill="#22b573"/>
+                <!-- Wed -->
+                <rect x="306" y="70"  width="18" height="140" rx="2" fill="#6c5ce7"/>
+                <rect x="326" y="110" width="18" height="100" rx="2" fill="#22b573"/>
+                <!-- Mohammed -->
+                <rect x="386" y="55"  width="18" height="155" rx="2" fill="#6c5ce7"/>
+                <rect x="406" y="120" width="18" height="90"  rx="2" fill="#22b573"/>
+              </g>
+              <g fill="#8a93a6" font-size="10" font-family="Inter" text-anchor="middle">
+                <text x="85" y="226">Fatima</text><text x="165" y="226">Rashid</text><text x="245" y="226">Hassan</text>
+                <text x="325" y="226">Wed</text><text x="405" y="226">Mohammed</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Operator Performance -->
+        <div class="card">
+          <div class="ph"><span class="ph-title">Operator Performance</span>
+            <div class="legend"><span><i style="background:#19b6d9"></i>Legend</span><span><i style="background:#9fd9e8"></i>Legend</span></div>
+          </div>
+          <div class="chart-wrap">
+            <svg viewBox="0 0 480 250" preserveAspectRatio="none">
+              <g stroke="#eef0f4" stroke-width="1">
+                <line x1="46" y1="20" x2="470" y2="20"/><line x1="46" y1="62" x2="470" y2="62"/>
+                <line x1="46" y1="104" x2="470" y2="104"/><line x1="46" y1="146" x2="470" y2="146"/>
+                <line x1="46" y1="188" x2="470" y2="188"/><line x1="46" y1="210" x2="470" y2="210"/>
+              </g>
+              <g fill="#aeb6c4" font-size="9" font-family="Inter" text-anchor="end">
+                <text x="40" y="24">1000.00</text><text x="40" y="66">800.00</text><text x="40" y="108">600.00</text>
+                <text x="40" y="150">400.00</text><text x="40" y="192">200.00</text><text x="40" y="214">0</text>
+              </g>
+              <path fill="none" stroke="#9fd9e8" stroke-width="2.5" d="M66,150 C110,90 140,110 184,120 C230,130 250,80 296,100 C340,118 370,70 414,60 L460,95"/>
+              <path fill="none" stroke="#19b6d9" stroke-width="2.5" d="M66,120 C110,170 140,90 184,80 C230,72 250,150 296,140 C340,132 370,170 414,150 L460,160"/>
+              <line x1="184" y1="20" x2="184" y2="210" stroke="#cbd2dd" stroke-width="1" stroke-dasharray="3 3"/>
+              <circle cx="184" cy="80" r="3.5" fill="#19b6d9"/><circle cx="184" cy="120" r="3.5" fill="#9fd9e8"/>
+              <g fill="#8a93a6" font-size="10" font-family="Inter" text-anchor="middle">
+                <text x="66" y="228">1</text><text x="132" y="228">2</text><text x="198" y="228">3</text><text x="264" y="228">4</text>
+                <text x="330" y="228">5</text><text x="396" y="228">6</text><text x="460" y="228">7</text>
+              </g>
+            </svg>
+            <div class="tip" style="left:34%">
+              <div class="tip-h">2020/04</div>
+              <div class="tip-r"><i style="background:#19b6d9"></i>Legend <b>980.00</b></div>
+              <div class="tip-r"><i style="background:#9fd9e8"></i>Legend <b>640.00</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /* ─── Drag-and-drop reordering for the Active Operators cards ─── */
+    (function () {
+      const grid = document.querySelector('.op-cards');
+      if (!grid) return;
+
+      grid.querySelectorAll('.opc').forEach(card => { card.setAttribute('draggable', 'true'); });
+
+      let dragEl = null;
+
+      // Find the card the dragged item should be inserted *before*, based on
+      // pointer position in row-major (reading) order — works for the 2-col grid.
+      function cardAfterPointer(x, y) {
+        const cards = [...grid.querySelectorAll('.opc:not(.dragging)')];
+        return cards.find(el => {
+          const b = el.getBoundingClientRect();
+          const cx = b.left + b.width / 2;
+          const cy = b.top + b.height / 2;
+          return (y < cy - b.height / 2) || (y < cy + b.height / 2 && x < cx);
+        }) || null;
+      }
+
+      grid.addEventListener('dragstart', e => {
+        const card = e.target.closest('.opc');
+        if (!card) return;
+        dragEl = card;
+        card.classList.add('dragging');
+        grid.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        // Some browsers need data set for the drag to initiate.
+        try { e.dataTransfer.setData('text/plain', ''); } catch (_) {}
+      });
+
+      grid.addEventListener('dragend', () => {
+        if (dragEl) dragEl.classList.remove('dragging');
+        grid.classList.remove('is-dragging');
+        dragEl = null;
+      });
+
+      grid.addEventListener('dragover', e => {
+        if (!dragEl) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const after = cardAfterPointer(e.clientX, e.clientY);
+        if (after == null) {
+          grid.appendChild(dragEl);
+        } else if (after !== dragEl) {
+          grid.insertBefore(dragEl, after);
+        }
+      });
+
+      grid.addEventListener('drop', e => e.preventDefault());
+    })();
+  </script>
+</body>
+</html>
