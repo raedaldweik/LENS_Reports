@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
 const AGENT_LABELS = {
-  fleet_agent:     'Fleet Data Agent',
-  analytics_agent: 'Analytics Agent',
-  forecast_engine: 'Forecast Engine',
-  process_mining:  'Process Mining Engine',
-  risk_model:      'Driver Risk Model',
-  model_engine:    'Model Engine',
+  police_data_agent:   'Police Data Agent',
+  analytics_agent:     'Analytics Agent',
+  forecast_engine:     'Forecast Engine',
+  risk_model:          'Driver Risk Model',
+  segmentation_engine: 'Segmentation Engine',
+  model_engine:        'Model Engine',
 };
 
 export default function ReasoningTrace({ trace }) {

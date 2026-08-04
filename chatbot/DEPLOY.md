@@ -1,13 +1,14 @@
-# Deploying the RTA Smart Monitoring Assistant to Railway
+# Deploying the Dubai Police Smart Assistant to Railway
 
-Same flow as the Health-repo assistant. The repo already contains everything Railway
-needs: `railway.toml` at the repo root points at `chatbot/Dockerfile`, which builds the
-frontend, installs the backend, and bakes in the CSVs.
+The repo already contains everything Railway needs: `railway.toml` at the repo root
+points at `chatbot/Dockerfile`, which builds the frontend, installs the backend, and
+bakes in the three datasets (`TRF_DANGEROUS_JOIN_V3.csv`, `TRF_DRIVER_CID_CASES.csv`,
+`TRF_DRIVER_MOVEMENTS_V2.csv`).
 
 ## Step 1 — Create the Railway service
 
 1. Go to https://railway.app/dashboard → **New Project** → **Deploy from GitHub repo**
-2. Select the `reports` repo
+2. Select the `LENS_Reports` repo
 3. In the service settings, set the **branch** Railway should deploy (e.g. `main` once
    the chatbot branch is merged, or the feature branch directly)
 4. Railway reads `railway.toml`, builds with `chatbot/Dockerfile` and deploys
@@ -20,7 +21,7 @@ injected into the container at runtime:
 
 1. Open the service → **Variables** tab
 2. Add `ANTHROPIC_API_KEY` = `sk-ant-...`
-3. (Optional) `MODEL` to override the default model
+3. (Optional) `MODEL` to override the default model (`claude-opus-5`)
 4. Railway redeploys automatically; the backend picks the key up via `os.getenv`
 
 CLI alternative:

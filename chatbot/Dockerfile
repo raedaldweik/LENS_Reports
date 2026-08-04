@@ -1,5 +1,5 @@
 # Build from the REPO ROOT so the CSVs are in the build context:
-#   docker build -f chatbot/Dockerfile -t rta-assistant .
+#   docker build -f chatbot/Dockerfile -t police-assistant .
 
 # ── Stage 1: build the React frontend ──
 FROM node:20-alpine AS frontend
@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY chatbot/backend/ .
 COPY --from=frontend /build/dist /app/frontend/dist
 
-# Ship the datasets with the image (data.py also falls back to the GitHub Pages URLs)
-COPY alerts.csv violations.csv /app/backend/data/
+# Ship the three Dubai Police datasets with the image
+COPY TRF_DANGEROUS_JOIN_V3.csv TRF_DRIVER_CID_CASES.csv TRF_DRIVER_MOVEMENTS_V2.csv /app/backend/data/
 
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

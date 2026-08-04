@@ -15,20 +15,20 @@ class QueryRequest(BaseModel):
     conversation_history: list[dict] = []
 
 
-# Suggested prompts shown as chips on a fresh conversation.
+# Suggested prompts shown as chips on a fresh conversation (bilingual AR/EN).
 SUGGESTIONS = [
-    {"id": "kpis",      "label": "Q1", "prompt": "How is the operation doing this week? Give me the key numbers.",
-     "description": "Operational dashboard KPI pulse"},
-    {"id": "hotspots",  "label": "Q2", "prompt": "Show the top violation hotspot zones as a chart",
-     "description": "Performance dashboard zone analysis"},
-    {"id": "forecast",  "label": "Q3", "prompt": "Run the 14-day alert volume forecast — do we need more staff?",
-     "description": "Forecasting model"},
-    {"id": "bottleneck", "label": "Q4", "prompt": "Where is the bottleneck in our alert handling workflow?",
-     "description": "Process mining / bottleneck model"},
-    {"id": "risk",      "label": "Q5", "prompt": "Who are our highest-risk drivers and what should we do about them?",
+    {"id": "kpis",      "label": "Q1", "prompt": "أعطني أهم مؤشرات لوحة السائقين الخطرين",
+     "description": "Dangerous-drivers overview KPIs"},
+    {"id": "risk",      "label": "Q2", "prompt": "Who are our 10 riskiest drivers and what should we do about them?",
      "description": "Driver risk model + recommendations"},
-    {"id": "staff",     "label": "Q6", "prompt": "Compare operator performance — who is breaching SLA the most?",
-     "description": "Staff dashboard operator metrics"},
+    {"id": "offences",  "label": "Q3", "prompt": "اعرض المخالفات الأكثر تكراراً في رسم بياني",
+     "description": "Top offences chart"},
+    {"id": "profile",   "label": "Q4", "prompt": "اعرض البطاقة التعريفية للسائق أحمد الزعابي",
+     "description": "Driver profile card lookup"},
+    {"id": "forecast",  "label": "Q5", "prompt": "Run the dangerous-drivers forecast to 2030",
+     "description": "Forecasting model"},
+    {"id": "watchlist", "label": "Q6", "prompt": "كم سائقاً خطراً لديه بلاغات جنائية مقلقة وهو داخل الدولة حالياً؟",
+     "description": "Cross-dataset priority watchlist"},
 ]
 
 

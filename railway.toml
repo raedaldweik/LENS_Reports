@@ -1,6 +1,7 @@
-# Railway deployment configuration for the RTA Smart Monitoring Assistant.
+# Railway deployment configuration for the Dubai Police Smart Assistant.
 # The Dockerfile lives in chatbot/ but builds from the repo root so the
-# CSVs (alerts.csv, violations.csv) are inside the build context.
+# three datasets (TRF_DANGEROUS_JOIN_V3.csv, TRF_DRIVER_CID_CASES.csv,
+# TRF_DRIVER_MOVEMENTS_V2.csv) are inside the build context.
 
 [build]
 builder = "DOCKERFILE"

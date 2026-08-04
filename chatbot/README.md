@@ -1,29 +1,39 @@
-# RTA Smart Monitoring Assistant
+# Dubai Police Smart Assistant — المساعد الذكي
 
-An agentic data-analysis chatbot over the three monitoring dashboards in this repo:
+An agentic data-analysis chatbot for the Dubai Police **Security Analytics & Forecast
+Center** (مركز التحليل والتنبؤ الأمني), grounded in the dangerous-drivers dashboards:
 
-| Scope | Dashboard | Data |
-|---|---|---|
-| Driver violations, risk scores, hotspots | `performance.html` | `violations.csv` (16.5K rows) |
-| Alerts, SLA compliance, resolution times | `operational.html` | `alerts.csv` (8.5K rows) |
-| Operator workload and performance | `staff.html` | `alerts.csv` + 24-operator roster |
+| Dashboard page | Data |
+|---|---|
+| Dangerous drivers overview (المخالفات والسائقون الخطرون) | `TRF_DANGEROUS_JOIN_V3.csv` — 2,462 violations, 750 drivers |
+| Driver profile card (البطاقة التعريفية للسائق الخطر) | joined view of all three datasets per driver |
+| Criminal reports (البلاغات الجنائية) | `TRF_DRIVER_CID_CASES.csv` — 1,105 rows, 612 reports |
+| Movements (التحركات) | `TRF_DRIVER_MOVEMENTS_V2.csv` — 750 persons, 4,808 vehicles |
 
-It can also run the three analytical models behind the dashboards — **forecasting** (14-day
-alert volume), **bottleneck / process mining** (10-stage alert workflow), and **driver risk**
-(0–10 scoring) — generate charts, and give operational recommendations. Questions outside
-this scope are politely declined.
+All three datasets join on the traffic file number (رقم الملف المروري / `TRAFFIC_NO`).
+
+It can also run the three analytical models behind the dashboards — **forecasting**
+(dangerous-driver count to 2030, ~700), **risk** (0–1 scoring = avg offence score/100;
+fleet average 0.57) and **segmentation** (danger category × demographic profiles) — plus a
+cross-dataset **watchlist** (dangerous drivers with concerning criminal reports currently
+inside the country), generate charts, and give operational recommendations. It answers in
+the language of the question (Arabic or English). Questions outside this scope are
+politely declined.
 
 ## Architecture
 
-Same pattern as the Health-repo assistant:
+- **Backend** (`backend/`) — FastAPI + Claude with tool-use. Three tools: `police_query`
+  (structured pandas queries over the CSVs, incl. per-driver profile cards), `run_model`
+  (forecast / risk / segmentation / watchlist) and `render_chart` (emits a chart spec).
+  Responses carry `answer` (markdown), `charts` (Recharts specs) and `trace` (reasoning steps).
+- **Frontend** (`frontend/`) — React 19 + Vite + Tailwind + Recharts. Dark-green
+  glass-morphism chat UI matching the dashboards (Manrope + IBM Plex Sans Arabic),
+  bilingual suggestion chips, conversation sidebar, dynamic charts and a collapsible
+  agent-reasoning panel.
 
-- **Backend** (`backend/`) — FastAPI + Claude with tool-use. Three tools: `fleet_query`
-  (structured pandas queries over the CSVs), `run_model` (forecast / bottleneck / risk) and
-  `render_chart` (emits a chart spec). Responses carry `answer` (markdown), `charts`
-  (Recharts specs) and `trace` (reasoning steps).
-- **Frontend** (`frontend/`) — React 19 + Vite + Tailwind + Recharts. Glass-morphism chat UI
-  re-skinned to RTA branding (Manrope, RTA red), with conversation sidebar, suggestion chips,
-  dynamic charts and a collapsible agent-reasoning panel.
+> **Branding note:** the header uses a neutral shield badge (`frontend/public/badge.svg`)
+> plus a text wordmark. To show the official emblem, drop it in as
+> `frontend/public/police.png` — the header picks it up automatically.
 
 ## Run locally
 
@@ -47,16 +57,15 @@ uvicorn main:app --reload --port 8010              # backend
 VITE_API_PORT=8010 npm run dev                     # frontend
 ```
 
-The backend looks for `alerts.csv` / `violations.csv` at the repo root; if they aren't found
-it falls back to the published copies at `https://raedaldweik.github.io/reports/`.
+The backend looks for the three `TRF_*.csv` files at the repo root (override with `DATA_DIR`).
 
 ## Single-container deployment
 
 ```bash
 # From the repo root
-docker build -f chatbot/Dockerfile -t rta-assistant .
-docker run -p 8000:8000 -e ANTHROPIC_API_KEY=sk-ant-... rta-assistant
+docker build -f chatbot/Dockerfile -t police-assistant .
+docker run -p 8000:8000 -e ANTHROPIC_API_KEY=sk-ant-... police-assistant
 ```
 
 The container builds the frontend and serves it from FastAPI at `/`, with the API under
-`/api/*` (health check: `GET /api/health`).
+`/api/*` (health check: `GET /api/health`). See `DEPLOY.md` for Railway.

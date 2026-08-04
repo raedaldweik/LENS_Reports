@@ -1,5 +1,5 @@
 """
-RTA Smart Monitoring Assistant — FastAPI backend.
+Dubai Police Smart Assistant — FastAPI backend.
 
 Local dev:
     cd chatbot/backend && uvicorn main:app --reload --port 8000
@@ -11,7 +11,7 @@ Production (Docker, built from the repo root):
 Env vars:
     ANTHROPIC_API_KEY — enables chat with Claude tool-use (required for answers)
     MODEL             — override default model name
-    DATA_DIR          — override location of alerts.csv / violations.csv
+    DATA_DIR          — override location of the three TRF_*.csv datasets
     PORT              — serving port
 """
 from __future__ import annotations
@@ -37,17 +37,19 @@ async def lifespan(app: FastAPI):
     for ds in data_service.DATASETS:
         try:
             df = data_service._load(ds)
-            print(f"✓ Loaded {len(df)} rows from {ds}.csv (latest: {data_service.data_now(ds).date()})")
+            latest = data_service.data_now(ds)
+            print(f"✓ Loaded {len(df)} rows from {data_service.FILES[ds]} (latest: {latest.date()})")
         except Exception as e:
-            print(f"⚠ Could not load {ds}.csv: {e}")
+            print(f"⚠ Could not load {data_service.FILES.get(ds, ds)}: {e}")
     has_key = bool(os.getenv("ANTHROPIC_API_KEY"))
     print(f"✓ Mode: {'LLM (tool-use enabled)' if has_key else 'No API key — chat disabled'}")
     yield
 
 
 app = FastAPI(
-    title="RTA Smart Monitoring Assistant",
-    description="Agentic data-analysis chatbot over the Performance, Operational and Staff dashboards",
+    title="Dubai Police Smart Assistant",
+    description="Agentic data-analysis chatbot over the Security Analytics & Forecast Center "
+                "dangerous-drivers dashboards",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -69,7 +71,8 @@ def health() -> dict:
     return {
         "status": "ok",
         "mode": "llm" if has_key else "no-key",
-        "agents": ["fleet_agent", "forecast_engine", "process_mining", "risk_model", "analytics_agent"],
+        "agents": ["police_data_agent", "forecast_engine", "risk_model",
+                   "segmentation_engine", "analytics_agent"],
     }
 
 
@@ -95,7 +98,7 @@ else:
     @app.get("/")
     def root() -> dict:
         return {
-            "service": "RTA Smart Monitoring Assistant",
+            "service": "Dubai Police Smart Assistant",
             "status": "operational (dev mode — no frontend build found)",
             "hint": "run 'npm run build' in chatbot/frontend, or use the Vite dev server on :5173",
         }

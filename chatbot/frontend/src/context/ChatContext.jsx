@@ -5,7 +5,7 @@ const ChatContext = createContext();
 const WELCOME = {
   role: 'assistant',
   type: 'text',
-  content: "Hi — I'm the RTA Smart Monitoring Assistant, grounded in your Performance, Operational and Staff dashboards. I can analyse violations, alerts, SLA compliance and operator workload, run the forecasting, bottleneck and risk models, build charts, and give recommendations. What would you like to look at?",
+  content: "مرحباً — أنا المساعد الذكي لمركز التحليل والتنبؤ الأمني في شرطة دبي. Hi — I'm the Smart Assistant of the Dubai Police Security Analytics & Forecast Center. I can analyse dangerous drivers, violations, criminal reports and movements, look up driver profile cards, run the forecasting, risk and segmentation models, build charts and give recommendations — in English or Arabic. What would you like to look at?",
 };
 const id = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 

@@ -5,15 +5,16 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-const PALETTE = ['#b91c2c', '#0e7490', '#b45309', '#047857', '#b8852e', '#7B61FF', '#dc2626', '#475569'];
+const PALETTE = ['#2dd4a7', '#38bdf8', '#f0b429', '#ef5350', '#a78bfa', '#43e8bc', '#fb923c', '#8fb3a0'];
 
 const tooltipStyle = {
-  background: 'rgba(255,252,248,0.98)',
-  border: '1px solid rgba(185,28,44,0.25)',
+  background: 'rgba(7,22,16,0.97)',
+  border: '1px solid rgba(45,212,167,0.30)',
   borderRadius: '8px',
   fontSize: '11.5px',
   padding: '6px 10px',
-  boxShadow: '0 4px 16px rgba(10,22,40,0.12)',
+  color: '#e9f6ef',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
 };
 
 export default function DynamicChart({ spec }) {
@@ -31,7 +32,7 @@ export default function DynamicChart({ spec }) {
 
   return (
     <div className="mt-2 rounded-xl p-3.5 animate-fade-up"
-      style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(185,28,44,0.12)', boxShadow: 'var(--glass-shadow)' }}>
+      style={{ background: 'rgba(9,28,20,0.72)', border: '1px solid rgba(45,212,167,0.16)', boxShadow: 'var(--glass-shadow)' }}>
       {(title || subtitle) && (
         <div className="mb-2">
           {title && <div className="text-[12.5px] font-semibold" style={{ color: 'var(--text)' }}>{title}</div>}
@@ -61,22 +62,22 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
     };
     return (
       <BarChart data={data} margin={{ top: 8, right: 14, left: -8, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(185,28,44,0.08)" vertical={false} />
-        <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#475569' }}
-          axisLine={{ stroke: 'rgba(185,28,44,0.15)' }} tickLine={false}
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,212,167,0.10)" vertical={false} />
+        <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8fb3a0' }}
+          axisLine={{ stroke: 'rgba(45,212,167,0.20)' }} tickLine={false}
           interval={0}
           angle={shouldRotate ? -30 : 0}
           textAnchor={shouldRotate ? 'end' : 'middle'}
           height={axisHeight}
           tickFormatter={truncate} />
-        <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false}
+        <YAxis tick={{ fontSize: 10, fill: '#8fb3a0' }} axisLine={false} tickLine={false}
           label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fontSize: 10, offset: 12 } : null} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(185,28,44,0.05)' }} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(45,212,167,0.06)' }} />
         {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
         {annotations.filter(a => a.type === 'reference').map((a, i) => (
           <ReferenceLine key={i} y={a.value}
-            stroke={a.color || '#b45309'} strokeDasharray="4 4"
-            label={{ value: a.label, fontSize: 9, fill: a.color || '#b45309', position: 'right' }} />
+            stroke={a.color || '#f0b429'} strokeDasharray="4 4"
+            label={{ value: a.label, fontSize: 9, fill: a.color || '#f0b429', position: 'right' }} />
         ))}
         {yKeys.map((yk, i) => (
           <Bar key={yk.key} dataKey={yk.key} name={yk.label || yk.key}
@@ -92,15 +93,15 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
 
   if (type === 'line') return (
     <LineChart data={data} margin={{ top: 8, right: 14, left: -8, bottom: 4 }}>
-      <CartesianGrid strokeDasharray="3 3" stroke="rgba(185,28,44,0.08)" vertical={false} />
-      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#475569' }} tickLine={false} />
-      <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false}
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,212,167,0.10)" vertical={false} />
+      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8fb3a0' }} tickLine={false} />
+      <YAxis tick={{ fontSize: 10, fill: '#8fb3a0' }} axisLine={false} tickLine={false}
         domain={annotations.find(a => a.type === 'reference') ? ['auto', 'auto'] : [0, 'auto']} />
       <Tooltip contentStyle={tooltipStyle} />
       {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
       {annotations.filter(a => a.type === 'reference').map((a, i) => (
-        <ReferenceLine key={i} y={a.value} stroke={a.color || '#b45309'} strokeDasharray="4 4"
-          label={{ value: a.label, fontSize: 9, fill: a.color || '#b45309' }} />
+        <ReferenceLine key={i} y={a.value} stroke={a.color || '#f0b429'} strokeDasharray="4 4"
+          label={{ value: a.label, fontSize: 9, fill: a.color || '#f0b429' }} />
       ))}
       {yKeys.map((yk, i) => (
         <Line key={yk.key} type="monotone" dataKey={yk.key} name={yk.label || yk.key}
@@ -120,9 +121,9 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
           </linearGradient>
         ))}
       </defs>
-      <CartesianGrid strokeDasharray="3 3" stroke="rgba(185,28,44,0.08)" vertical={false} />
-      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#475569' }} tickLine={false} />
-      <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,212,167,0.10)" vertical={false} />
+      <XAxis dataKey={xKey} tick={{ fontSize: 10, fill: '#8fb3a0' }} tickLine={false} />
+      <YAxis tick={{ fontSize: 10, fill: '#8fb3a0' }} axisLine={false} tickLine={false} />
       <Tooltip contentStyle={tooltipStyle} />
       {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
       {yKeys.map((yk, i) => (
@@ -150,9 +151,9 @@ function renderChart(type, data, xKey, yKeys, annotations, yAxisLabel) {
 
   if (type === 'scatter') return (
     <ScatterChart margin={{ top: 8, right: 14, left: 0, bottom: 4 }}>
-      <CartesianGrid strokeDasharray="3 3" stroke="rgba(185,28,44,0.08)" />
-      <XAxis dataKey={xKey} type="number" tick={{ fontSize: 10, fill: '#475569' }} />
-      <YAxis dataKey={yKeys[0].key} type="number" tick={{ fontSize: 10, fill: '#475569' }} />
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,212,167,0.10)" />
+      <XAxis dataKey={xKey} type="number" tick={{ fontSize: 10, fill: '#8fb3a0' }} />
+      <YAxis dataKey={yKeys[0].key} type="number" tick={{ fontSize: 10, fill: '#8fb3a0' }} />
       <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: '3 3' }} />
       <Scatter data={data} fill={yKeys[0].color || PALETTE[0]} />
     </ScatterChart>
