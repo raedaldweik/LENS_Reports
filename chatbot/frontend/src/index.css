@@ -91,23 +91,41 @@ html, body {
   box-shadow: var(--glass-shadow);
 }
 .topbar .brand {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 16px;
 }
+/* Official Dubai Police lockup (public/police.png). Falls back to badge+text. */
 .topbar .brand .police-logo {
-  height: 44px; width: auto; object-fit: contain; display: block;
-  filter: drop-shadow(0 1px 6px rgba(0,0,0,0.4));
+  height: 48px; width: auto; object-fit: contain; display: block;
+  filter: drop-shadow(0 1px 6px rgba(0,0,0,0.35));
 }
 .topbar .brand .badge-logo {
   height: 38px; width: auto; display: block;
   filter: drop-shadow(0 0 12px rgba(46,229,157,0.35));
 }
-.topbar .brand .wordmark { display: flex; flex-direction: column; line-height: 1.25; }
-.topbar .brand .wordmark .ar { font-size: 16px; font-weight: 800; color: var(--text); }
-.topbar .brand .wordmark .en { font-family: var(--lat); font-size: 9px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: var(--text-dim); }
-.topbar .divider { width: 1px; height: 34px; background: var(--hairline); }
-.topbar .center-name { display: flex; flex-direction: column; line-height: 1.35; }
-.topbar .center-name .ar { font-size: 13px; font-weight: 700; color: var(--text-md); }
-.topbar .center-name .en { font-family: var(--lat); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; color: var(--text-faint); }
+.topbar .brand .wordmark { display: flex; flex-direction: column; line-height: 1.25; text-align: start; }
+.topbar .brand .wordmark .ar { font-size: 16px; font-weight: 800; color: #35c9a4; }
+.topbar .brand .wordmark .en { font-family: var(--lat); font-size: 9px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #35c9a4; }
+.topbar .divider { width: 1px; height: 38px; background: rgba(255,255,255,0.22); }
+/* Official SAS logo (public/sas.png) — hidden until the asset exists. */
+.topbar .brand .sas-logo {
+  height: 34px; width: auto; object-fit: contain; display: block;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.35));
+}
+/* Bilingual center lockup — pure typography, mirrors the official arrangement:
+   English column on the left, Arabic on the right. */
+.center-lockup {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 10px;
+  align-items: baseline;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.center-lockup .ar { text-align: start; color: var(--text); font-weight: 700; }
+.center-lockup .en { direction: ltr; text-align: right; font-family: var(--lat); color: var(--text); font-weight: 600; }
+.center-lockup .sm { font-size: 8.5px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.06em; }
+.center-lockup .lg { font-size: 13px; }
+.center-lockup .en.lg { font-size: 11.5px; letter-spacing: 0.02em; }
 
 .btn-ghost {
   display: inline-flex; align-items: center; gap: 8px;

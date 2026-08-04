@@ -15,9 +15,28 @@ function LiveClock() {
   );
 }
 
+/* The bilingual centre lockup — English column left, Arabic right,
+   matching the official arrangement. */
+function CenterLockup() {
+  return (
+    <div className="center-lockup" aria-label="مركز التحليل والتنبؤ الأمني — Security Analytics & Forecast Center">
+      <span className="ar sm">مـركـز</span>       <span className="en sm">Security</span>
+      <span className="ar lg">التحليــل و</span>  <span className="en lg">Analytics &amp;</span>
+      <span className="ar lg">التنبــؤ</span>     <span className="en lg">Forecast</span>
+      <span className="ar sm">الأمني</span>       <span className="en sm">Center</span>
+    </div>
+  );
+}
+
 export default function Header() {
-  // "الرجوع للصفحة الرئيسية": target from ?home=<url> (set when the dashboard links
-  // here), otherwise browser back.
+  // Official assets in frontend/public/: police.png (Dubai Police lockup) and
+  // sas.png (SAS logo). Until they exist, police falls back to the neutral
+  // badge + wordmark and the SAS slot stays hidden.
+  const [policeOk, setPoliceOk] = useState(true);
+  const [sasOk, setSasOk] = useState(true);
+
+  // "الرجوع للصفحة الرئيسية": target from ?home=<url> (set when the dashboard
+  // links here), otherwise browser back.
   const goHome = () => {
     const home = new URLSearchParams(location.search).get('home');
     if (home) location.href = home;
@@ -28,20 +47,26 @@ export default function Header() {
 
   return (
     <header className="topbar">
-      {/* Brand — right side in RTL. Drop the official emblem at public/police.png. */}
+      {/* Brand cluster — right side in RTL: police | divider | sas | centre lockup */}
       <div className="brand">
-        <img className="police-logo" src="/police.png" alt=""
-          onError={e => { e.target.style.display = 'none'; }} />
-        <img className="badge-logo" src="/badge.svg" alt="" />
-        <div className="wordmark">
-          <span className="ar">شرطة دبي</span>
-          <span className="en">Dubai Police</span>
-        </div>
-      </div>
-      <div className="divider" />
-      <div className="center-name">
-        <span className="ar">مركز التحليل والتنبؤ الأمني</span>
-        <span className="en">Security Analytics &amp; Forecast Center</span>
+        {policeOk ? (
+          <img className="police-logo" src="/police.png" alt="شرطة دبي — Dubai Police"
+            onError={() => setPoliceOk(false)} />
+        ) : (
+          <>
+            <img className="badge-logo" src="/badge.svg" alt="" />
+            <div className="wordmark">
+              <span className="ar">شرطة دبي</span>
+              <span className="en">Dubai Police</span>
+            </div>
+          </>
+        )}
+        <div className="divider" />
+        {sasOk && (
+          <img className="sas-logo" src="/sas.png" alt="SAS"
+            onError={() => setSasOk(false)} />
+        )}
+        <CenterLockup />
       </div>
 
       <div className="flex-1" />
