@@ -121,9 +121,12 @@ TOOLS = [
         "name": "run_model",
         "description": (
             "Run one of the three analytical models behind the dashboards:\n"
-            "  • forecasting — dangerous-driver count forecast to 2030 (the dashboard's AI panel: "
-            "~700 drivers by 2030). Historical per-year counts 2022–2026 plus dampened-trend "
-            "projection with confidence bounds. Optional `horizon_year` (default 2030).\n"
+            "  • forecasting — THE SAME forecast as the dashboard's 'الذكاء الاصطناعي والتنبؤ' card: "
+            "OLS linear trend on distinct drivers per registration year (2022–2026, the partial "
+            "final year excluded from the fit) with a 95% prediction interval; the headline is "
+            "rounded to the nearest 100 (~700 by 2030). Also returns the card's narrative figures: "
+            "1,767 drivers on the risk list, 53.5% high-risk share. Optional `horizon_year` "
+            "(default 2030) and `confidence` (80|90|95|99).\n"
             "  • risk — driver risk model (0–1 score = avg OFFENCE_SCORE/100; fleet average 0.57). "
             "`view`: summary (category distribution + gauge) | top_drivers (riskiest drivers) | "
             "by_group (avg risk by `group_by`: NATIONALITY, OCCUPATION_DESC, SPONSOR_NAME, ORG_NAME, "
@@ -139,6 +142,7 @@ TOOLS = [
             "properties": {
                 "model": {"type": "string", "enum": ["forecasting", "risk", "segmentation"]},
                 "horizon_year": {"type": "integer", "default": 2030},
+                "confidence": {"type": "integer", "enum": [80, 90, 95, 99], "default": 95},
                 "view": {"type": "string",
                          "enum": ["summary", "top_drivers", "by_group", "watchlist"]},
                 "group_by": {"type": "string"},
@@ -230,7 +234,8 @@ def execute_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     if name == "run_model":
         m = args.get("model")
         if m == "forecasting":
-            return models.forecast_dangerous_drivers(args.get("horizon_year", 2030))
+            return models.forecast_dangerous_drivers(args.get("horizon_year", 2030),
+                                                     args.get("confidence", 95))
         if m == "risk":
             return models.risk_model(args.get("view", "summary"), args.get("n", 10),
                                      args.get("group_by"))
@@ -253,7 +258,9 @@ YOUR SCOPE — you answer questions about, and only about:
 2. DRIVER PROFILE CARD (البطاقة التعريفية للسائق الخطر) — per-driver lookup by traffic file number (رقم الملف المروري) or name: identity, license and driving institute, risk score, violations, vehicles (expired/impounded/wanted), criminal record, border status.
 3. CRIMINAL REPORTS (البلاغات الجنائية) — 1,105 rows: 612 criminal reports across 50 charges, classified concerning (مقلقة, 353) / non-concerning (غير مقلقة, 259).
 4. MOVEMENTS (التحركات) — 750 persons: inside/outside country (374/376), border crossings, vehicles (4,808), priors (السوابق), occupations, nationalities.
-5. THE THREE MODELS — forecasting (dangerous drivers to 2030, ~700), risk (0–1 scoring, fleet avg 0.57), and segmentation (danger category × demographic profiles). The risk model's watchlist view cross-references all three datasets.
+5. THE THREE MODELS — forecasting, risk (0–1 scoring, fleet avg 0.57), and segmentation (danger category × demographic profiles). The risk model's watchlist view cross-references all three datasets.
+
+THE FORECAST: the forecasting model is the exact engine behind the dashboard's "الذكاء الاصطناعي والتنبؤ" card — an ordinary-least-squares linear trend on distinct drivers per registration year, with the partial final year (2026) excluded from the fit and a 95% prediction interval. Its headline matches the dashboard word for word: ~700 dangerous drivers by 2030, 1,767 drivers on the risk list, 53.5% high-risk. When asked about "the forecast on the dashboard", use this model — the numbers will match what the user sees on screen. If asked about methodology, be honest: it is a linear trend with a prediction interval, not SAS VA's ARIMA forecast object.
 
 If a question is outside this scope (other police departments, other datasets, or unrelated topics), politely say it is outside the data you cover and steer the user back — do not answer from general knowledge.
 
@@ -391,7 +398,7 @@ def _summarise_result(tool: str, result: dict) -> str:
         return "Aggregated stats computed"
     if tool == "run_model":
         if result.get("model") == "dangerous_drivers_forecast":
-            return f"Forecast: ~{result['insights']['forecast_final']} drivers by {result['horizon_year']}"
+            return f"Forecast: ~{result['insights']['forecast_headline']} drivers by {result['horizon_year']}"
         if result.get("view") == "watchlist":
             return f"Watchlist: {result['matching_drivers_inside_country']} priority drivers inside the country"
         if result.get("model") == "driver_segmentation":

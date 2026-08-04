@@ -88,6 +88,7 @@ def _load(dataset: str) -> pd.DataFrame:
                   "CRIMINAL_PRIORS", "GPS_LATITUDE", "GPS_LONGITUDE", "TOT_CASES"):
             df[c] = pd.to_numeric(df[c], errors="coerce")
         df["_ts"] = _sas_date(df["TICKET_DATE"])
+        df["CREATED_DATE_P"] = _sas_date(df["CREATED_DATE"])
         df["BIRTH_DATE_P"] = _sas_date(df["BIRTH_DATE"], fix_future_century=True)
         df["LAST_TICKET_DATE_P"] = _sas_date(df["LAST_TICKET_DATE"])
         df["LIC_ISSUE_DATE_P"] = _sas_date(df["LIC_ISSUE_DATED"])

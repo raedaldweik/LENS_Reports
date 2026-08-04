@@ -1,7 +1,11 @@
 """
 The three analytical models surfaced on the Dubai Police dashboards:
 
-  - forecasting   → the AI panel's dangerous-driver forecast (2022–2030, ~700 by 2030)
+  - forecasting   → a faithful port of the dashboard's Data-Driven-Content
+                    forecast card (AI_Forecast v1): OLS linear trend on distinct
+                    drivers per registration year, partial final year dropped,
+                    95% prediction interval, headline rounded to the nearest 100
+                    ("~700 by 2030")
   - risk          → driver risk scoring (0–1 = avg OFFENCE_SCORE/100; gauge shows 0.57)
   - segmentation  → the Sankey panel (danger category × age band × nationality ×
                     gender × vehicle class profiles)
@@ -11,6 +15,7 @@ drivers with concerning criminal reports who are currently inside the country.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -18,54 +23,112 @@ import pandas as pd
 
 from services import data
 
-# ──────────── Forecasting model (dashboard page 1) ────────────
-# Distinct dangerous drivers active per year, projected with a dampened linear
-# trend — matching the dashboard's AI-narrative forecast of ~700 by 2030.
+# ──────────── Forecasting model (dashboard AI panel, DDC AI_Forecast v1) ────────────
+# Same engine as the dashboard's Data-Driven Content card:
+#   series  = Distinct(Traffic No) per created_year (registration year)
+#   model   = ordinary least squares linear trend, the final (partial) year dropped
+#   band    = ŷ ± t(α/2, n−2) · s · sqrt(1 + 1/n + (x−x̄)²/Σ(x−x̄)²)   (95% PREDICTION interval)
+#   {fc}    = prediction rounded to the nearest 100  →  "نحو 700 بحلول 2030"
+# It is a linear trend, not SAS VA's ARIMA/ESM forecast object — same as the dashboard.
 
-_DAMPING = 0.7
-_BAND = 0.12  # ±12% confidence band
+# two-tailed t critical values by degrees of freedom (mirrors the DDC's table)
+_TT = {
+    80: {1: 3.078, 2: 1.886, 3: 1.638, 4: 1.533, 5: 1.476, 6: 1.440, 7: 1.415,
+         8: 1.397, 9: 1.383, 10: 1.372, "inf": 1.282},
+    90: {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895,
+         8: 1.860, 9: 1.833, 10: 1.812, "inf": 1.645},
+    95: {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365,
+         8: 2.306, 9: 2.262, 10: 2.228, "inf": 1.960},
+    99: {1: 63.657, 2: 9.925, 3: 5.841, 4: 4.604, 5: 4.032, 6: 3.707, 7: 3.499,
+         8: 3.355, 9: 3.250, 10: 3.169, "inf": 2.576},
+}
 
 
-def forecast_dangerous_drivers(horizon_year: int = 2030) -> dict[str, Any]:
-    v = data._load("violations").dropna(subset=["_ts"])
-    yearly = v.groupby(v["_ts"].dt.year)["TRAFFIC_NO"].nunique().sort_index()
+def _tcrit(conf: int, df: int) -> float:
+    row = _TT.get(conf, _TT[95])
+    if df <= 0:
+        return row[1]
+    return row.get(df, row["inf"])
+
+
+def forecast_dangerous_drivers(horizon_year: int = 2030, confidence: int = 95,
+                               drop_partial_year: bool = True) -> dict[str, Any]:
+    v = data._load("violations")
+    created = v.dropna(subset=["CREATED_DATE_P"])
+    yearly = created.groupby(created["CREATED_DATE_P"].dt.year)["TRAFFIC_NO"].nunique().sort_index()
     years = yearly.index.astype(int).tolist()
     counts = yearly.values.astype(float)
 
-    slope = float(np.polyfit(years, counts, 1)[0])
-    last_year, last_count = years[-1], float(counts[-1])
-    horizon_year = max(last_year + 1, min(int(horizon_year or 2030), last_year + 15))
+    # the dashboard narrative's {now}: drivers on the risk list summed across years
+    now_total = int(counts.sum())
+    # {pct}: share of that list in danger categories >= 3 (dangerous / highly dangerous)
+    dcat = pd.to_numeric(created["DANGER_CATEGORY"], errors="coerce")
+    hi = (created.assign(_dc=dcat)
+          .groupby([created["CREATED_DATE_P"].dt.year, "_dc"])["TRAFFIC_NO"].nunique())
+    hi_total = int(hi[hi.index.get_level_values(1) >= 3].sum())
+    hi_pct = round(hi_total / now_total * 100, 1) if now_total else 0.0
+
+    # drop the partial final year — it drags the slope down (the DDC's ?dropLast)
+    dropped = None
+    fit_years, fit_counts = years, counts
+    if drop_partial_year and len(years) > 2:
+        dropped = {"year": years[-1], "drivers": int(counts[-1]),
+                   "note": "partial year — excluded from the trend fit"}
+        fit_years, fit_counts = years[:-1], counts[:-1]
+
+    # OLS linear trend with a proper prediction interval (the DDC's fitTrend)
+    xs = np.array(fit_years, float)
+    ys = np.array(fit_counts, float)
+    n = len(xs)
+    mx, my = xs.mean(), ys.mean()
+    sxx = float(((xs - mx) ** 2).sum())
+    b = float(((xs - mx) * (ys - my)).sum() / sxx)
+    a = float(my - b * mx)
+    sse = float(((ys - (a + b * xs)) ** 2).sum())
+    s = math.sqrt(sse / (n - 2)) if n > 2 else 0.0
+    confidence = confidence if confidence in _TT else 95
+    t = _tcrit(confidence, n - 2)
+
+    last_fit_year = fit_years[-1]
+    horizon_year = max(last_fit_year + 1, min(int(horizon_year or 2030), last_fit_year + 15))
 
     rows = [{"year": int(y), "drivers": int(c), "type": "actual"} for y, c in zip(years, counts)]
-    value, step = last_count, slope
-    for y in range(last_year + 1, horizon_year + 1):
-        step *= _DAMPING
-        value += step
-        rows.append({
-            "year": y, "drivers": round(value), "type": "forecast",
-            "lower_bound": round(value * (1 - _BAND)),
-            "upper_bound": round(value * (1 + _BAND)),
-        })
+    if dropped:
+        rows[-1]["type"] = "actual (partial, not fitted)"
+    for y in range(last_fit_year + 1, horizon_year + 1):
+        pred = a + b * y
+        half = t * s * math.sqrt(1 + 1 / n + (y - mx) ** 2 / sxx)
+        rows.append({"year": y, "drivers": round(pred), "type": "forecast",
+                     "lower_bound": round(max(0.0, pred - half)), "upper_bound": round(pred + half)})
 
-    final = rows[-1]["drivers"]
-    growth = (final - last_count) / last_count * 100 if last_count else 0
+    final_pred = a + b * horizon_year
+    headline_val = round(final_pred / 100) * 100  # the DDC rounds {fc} to the nearest 100
     return {
         "model": "dangerous_drivers_forecast",
+        "engine": "dashboard DDC 'AI_Forecast v1' (OLS linear trend + prediction interval)",
         "horizon_year": horizon_year,
-        "history_years": f"{years[0]}–{last_year}",
+        "confidence_pct": confidence,
+        "history_years": f"{years[0]}–{years[-1]}",
+        "dropped_partial_year": dropped,
         "rows": rows,
         "insights": {
-            "current_year_drivers": int(last_count),
-            "forecast_final": final,
-            "growth_pct_vs_current": round(growth, 1),
-            "annual_trend_drivers": round(slope, 1),
-            "headline": (f"The number of active dangerous drivers is projected to reach "
-                         f"~{final} by {horizon_year} (from {int(last_count)} in {last_year})."),
-            "confidence": "95%",
+            "drivers_on_risk_list": now_total,          # dashboard {now}: 1,767
+            "high_risk_share_pct": hi_pct,              # dashboard {pct}: 53.5
+            "forecast_exact": round(final_pred, 1),
+            "forecast_headline": headline_val,          # dashboard {fc}: ~700
+            "annual_trend_drivers": round(b, 1),        # dashboard {slope}
+            "prediction_interval_final": [rows[-1]["lower_bound"], rows[-1]["upper_bound"]],
+            "headline": (f"The forecast points to ~{headline_val} dangerous drivers by "
+                         f"{horizon_year} (exact prediction {final_pred:.0f}, {confidence}% "
+                         f"prediction interval {rows[-1]['lower_bound']}–{rows[-1]['upper_bound']})."),
+            "headline_ar": (f"يشير التنبؤ إلى بلوغ العدد نحو {headline_val} بحلول {horizon_year}."),
         },
-        "methodology": ("Distinct dangerous drivers with violations per year (from TICKET_DATE), "
-                        f"linear trend dampened at {_DAMPING}/yr, ±{int(_BAND*100)}% confidence band. "
-                        "Matches the dashboard AI-narrative forecast (~700 by 2030)."),
+        "methodology": ("Identical to the dashboard's forecast card: distinct drivers per "
+                        "registration year (CREATED_DATE), ordinary-least-squares linear trend "
+                        "with the partial final year excluded from the fit, and a "
+                        f"{confidence}% prediction interval "
+                        "band = ŷ ± t(α/2, n−2)·s·√(1 + 1/n + (x−x̄)²/Σ(x−x̄)²). "
+                        "A linear trend, not SAS VA's ARIMA forecast object."),
     }
 
 

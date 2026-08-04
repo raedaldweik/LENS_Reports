@@ -13,12 +13,15 @@ Center** (مركز التحليل والتنبؤ الأمني), grounded in the 
 All three datasets join on the traffic file number (رقم الملف المروري / `TRAFFIC_NO`).
 
 It can also run the three analytical models behind the dashboards — **forecasting**
-(dangerous-driver count to 2030, ~700), **risk** (0–1 scoring = avg offence score/100;
-fleet average 0.57) and **segmentation** (danger category × demographic profiles) — plus a
-cross-dataset **watchlist** (dangerous drivers with concerning criminal reports currently
-inside the country), generate charts, and give operational recommendations. It answers in
-the language of the question (Arabic or English). Questions outside this scope are
-politely declined.
+(a faithful port of the dashboard's Data-Driven-Content forecast card: OLS linear trend
+on distinct drivers per registration year, partial final year dropped, 95% prediction
+interval — same headline as the dashboard, ~700 by 2030, 1,767 on the risk list, 53.5%
+high-risk), **risk** (0–1 scoring = avg offence score/100; fleet average 0.57) and
+**segmentation** (danger category × demographic profiles) — plus a cross-dataset
+**watchlist** (dangerous drivers with concerning criminal reports currently inside the
+country), generate charts, and give operational recommendations. It answers in the
+language of the question (Arabic or English). Questions outside this scope are politely
+declined.
 
 ## Architecture
 
