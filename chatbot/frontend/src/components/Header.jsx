@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useChat } from '../context/ChatContext';
+import { exportConversationPdf } from '../services/exportPdf';
 
-function LiveClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const time = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Dubai', hour12: false });
+function LiveBadge() {
   return (
     <div className="live-clock">
       <span className="label"><span className="dot" />البيانات مباشرة</span>
-      <span className="time">{time}</span>
     </div>
   );
 }
@@ -34,6 +29,8 @@ export default function Header() {
   // falls back to the typographic version if its image is missing.
   const [policeOk, setPoliceOk] = useState(true);
   const [centerOk, setCenterOk] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const { activeChat } = useChat();
 
   // "الرجوع للصفحة الرئيسية": target from ?home=<url> (set when the dashboard
   // links here), otherwise browser back.
@@ -43,7 +40,16 @@ export default function Header() {
     else history.back();
   };
 
-  const exportReport = () => window.print();
+  const exportReport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportConversationPdf(activeChat);
+    } catch (e) {
+      alert('تعذّر إنشاء التقرير: ' + e.message);
+    }
+    setExporting(false);
+  };
 
   return (
     <header className="topbar">
@@ -83,15 +89,16 @@ export default function Header() {
 
       <div className="divider" />
 
-      <LiveClock />
+      <LiveBadge />
 
-      <button className="btn-mint" onClick={exportReport}>
+      <button className="btn-mint" onClick={exportReport} disabled={exporting}
+        style={exporting ? { opacity: 0.6, cursor: 'wait' } : undefined}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        تصدير التقرير
+        {exporting ? 'جارٍ إنشاء التقرير…' : 'تصدير التقرير'}
       </button>
     </header>
   );

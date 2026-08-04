@@ -415,3 +415,34 @@ html, body {
   .msgs { color: #111; }
   .msg-bot-bubble, .msg-user-bubble { border-color: #ccc; background: #fff; color: #111; }
 }
+
+/* ═══ PDF report (off-screen, light theme) — تصدير التقرير ═══ */
+.pdf-report {
+  /* re-map the theme vars so cloned bubble content is readable on white */
+  --gold: #0e8a62; --gold-hi: #0b7a57; --gold-lo: #0a5f45;
+  --mint: #0e8a62; --mint-hi: #0b7a57;
+  --text: #17211c; --text-md: #2c3b34; --text-dim: #5c6f66; --text-faint: #8a978f;
+  font-family: var(--ar);
+  color: #2c3b34;
+  padding: 34px 38px 26px;
+}
+.pdf-head { display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid #0e8a62; padding-bottom: 16px; margin-bottom: 20px; }
+.pdf-logos { display: flex; align-items: center; gap: 18px; }
+.pdf-logos img { filter: brightness(0.55) saturate(1.4); }
+.pdf-title { font-size: 21px; font-weight: 800; color: #17211c; }
+.pdf-title .en { font-family: var(--lat); font-size: 13px; font-weight: 600; color: #5c6f66; }
+.pdf-meta { font-size: 11.5px; color: #5c6f66; }
+.pdf-q { margin: 14px 0 8px; padding: 10px 14px; background: #eef7f2; border-inline-start: 3px solid #0e8a62; border-radius: 8px; }
+.pdf-q-label { font-size: 10px; font-weight: 800; color: #0e8a62; margin-bottom: 3px; }
+.pdf-q-text { font-size: 13.5px; font-weight: 600; color: #17211c; line-height: 1.8; }
+.pdf-a { margin: 0 0 16px; padding: 4px 14px 10px; }
+.pdf-a-label { font-size: 10px; font-weight: 800; color: #8a978f; margin: 6px 0; }
+.pdf-a-body { font-size: 13px; line-height: 1.85; color: #2c3b34; }
+.pdf-a-body table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.pdf-a-body table, .pdf-a-body th, .pdf-a-body td { border: 1px solid #cfdcd5 !important; }
+.pdf-a-body th { background: #eef7f2 !important; color: #0a5f45 !important; padding: 5px 8px; }
+.pdf-a-body td { padding: 5px 8px; }
+.pdf-a-body code { background: #eef7f2 !important; color: #0a5f45 !important; }
+.pdf-a-body pre { background: #f2f5f3 !important; }
+.pdf-chart { display: block; margin: 10px 0; border: 1px solid #dfe8e3; border-radius: 8px; }
+.pdf-foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid #dfe8e3; font-size: 10px; color: #8a978f; text-align: center; }
