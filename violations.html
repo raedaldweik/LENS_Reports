@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>رادار المخالفات المرورية — التحليل والتنبؤ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ════════════════════════════════════════════════════════════════════
+   *  ✦  شرطة دبي · رادار المخالفات المرورية  ✦
+   *  Obsidian-emerald command center · glass surfaces · Manrope figures
+   * ════════════════════════════════════════════════════════════════════ */
+  :root {
+    /* ─── Surfaces ─────────────────────────────────────────────── */
+    --bg-0: #050d09;
+    --bg-1: #081511;
+    --bg-2: #0a1a12;          /* validator surface */
+    --glass:        rgba(13, 33, 24, 0.52);
+    --glass-strong: rgba(16, 40, 29, 0.72);
+    --glass-light:  rgba(18, 44, 32, 0.34);
+    --hairline:      rgba(146, 255, 205, 0.10);
+    --hairline-soft: rgba(146, 255, 205, 0.055);
+    --highlight:     rgba(210, 255, 232, 0.10);
+
+    /* ─── Ink ───────────────────────────────────────────────────── */
+    --ink-1: #eefff6;
+    --ink-2: #c2dccf;
+    --ink-3: #85a795;
+    --ink-4: #5b7c6b;
+    --ink-5: #40584c;
+
+    /* ─── Emerald sequence (validated ordinal ramp, dark) ───────── */
+    --seq-1: #1a5c3a;
+    --seq-2: #1f7a4b;
+    --seq-3: #27a563;
+    --seq-4: #3fd685;
+    --seq-5: #93f2bd;
+    --accent:        var(--seq-4);
+    --accent-soft:   rgba(63, 214, 133, 0.14);
+    --accent-glow:   rgba(63, 214, 133, 0.32);
+
+    /* ─── Risk status scale (reserved — always icon + label) ────── */
+    --risk-low:  #0ca30c;
+    --risk-mod:  #fab219;
+    --risk-high: #ec835a;
+    --risk-crit: #d03b3b;
+
+    --gold: #d8b45a;
+
+    /* ─── Shadow ladder ─────────────────────────────────────────── */
+    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+    --sh-2: 0 1px 2px rgba(0, 0, 0, 0.28), 0 6px 16px rgba(0, 0, 0, 0.30);
+    --sh-3: 0 1px 2px rgba(0, 0, 0, 0.30),
+            0 8px 20px rgba(0, 0, 0, 0.32),
+            0 28px 60px rgba(0, 0, 0, 0.36);
+
+    --r-md: 0.6cqw;
+    --r-lg: 0.95cqw;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg-0);
+    overflow: hidden;
+    font-family: 'IBM Plex Sans Arabic', 'Manrope', -apple-system, system-ui, sans-serif;
+    color: var(--ink-2);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .num { font-family: 'Manrope', 'IBM Plex Sans Arabic', sans-serif; font-variant-numeric: tabular-nums; }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  DASHBOARD SHELL · full viewport, container units inside
+   * ════════════════════════════════════════════════════════════════ */
+  .dashboard {
+    width: 100vw; height: 100vh;
+    position: relative;
+    container-type: inline-size;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto auto auto 1fr 1.08fr;
+    gap: 0.72cqw;
+    padding: 0.8cqw 1cqw 0.9cqw;
+    background:
+      radial-gradient(ellipse 68% 52% at 85% -8%,  rgba(31, 122, 75, 0.34) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 45% at 4% 108%,  rgba(24, 92, 60, 0.28)  0%, transparent 58%),
+      radial-gradient(ellipse 40% 34% at 12% 6%,   rgba(216, 180, 90, 0.05) 0%, transparent 60%),
+      linear-gradient(152deg, #0a1a12 0%, #06110b 46%, #04150d 100%);
+  }
+
+  /* fine grain */
+  .dashboard::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(146, 255, 205, 0.030) 1px, transparent 1px),
+      radial-gradient(circle at 21px 15px, rgba(146, 255, 205, 0.016) 1px, transparent 1px);
+    background-size: 30px 30px, 46px 46px;
+    pointer-events: none; z-index: 0;
+  }
+  /* command-center graticule */
+  .dashboard::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(146, 255, 205, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(146, 255, 205, 0.022) 1px, transparent 1px);
+    background-size: 4.2cqw 4.2cqw;
+    -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, #000 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, #000 0%, transparent 78%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Aurora bokeh ─────────────────────────────────────────────── */
+  .bokeh-layer { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .bokeh-dot {
+    position: absolute; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    aspect-ratio: 1;
+    will-change: opacity, transform;
+  }
+  .b-mint  { background: radial-gradient(circle, rgba(63, 214, 133, 0.13) 0%, rgba(63, 214, 133, 0.035) 38%, transparent 70%); filter: blur(1.9cqw); }
+  .b-teal  { background: radial-gradient(circle, rgba(38, 168, 138, 0.12) 0%, rgba(38, 168, 138, 0.03) 38%, transparent 70%); filter: blur(2.1cqw); }
+  .b-gold  { background: radial-gradient(circle, rgba(216, 180, 90, 0.09) 0%, rgba(216, 180, 90, 0.02) 40%, transparent 72%); filter: blur(1.7cqw); }
+  @keyframes slow-breathe {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.07); }
+  }
+  .bokeh-dot { animation: slow-breathe 10s ease-in-out infinite; }
+  .k1 { top: 8%;  left: 14%; width: 26cqw; animation-delay: 0s;  }
+  .k2 { top: 88%; left: 82%; width: 30cqw; animation-delay: 3s;  }
+  .k3 { top: 18%; left: 88%; width: 20cqw; animation-delay: 5s;  }
+  .k4 { top: 78%; left: 30%; width: 22cqw; animation-delay: 1.5s;}
+  .k5 { top: 46%; left: 55%; width: 16cqw; animation-delay: 7s;  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  HEADER
+   * ════════════════════════════════════════════════════════════════ */
+  .topbar {
+    position: relative; z-index: 3;
+    display: flex; align-items: center; gap: 1.1cqw;
+    background: linear-gradient(180deg, var(--glass-strong) 0%, var(--glass) 100%);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    padding: 0.55cqw 1cqw;
+    box-shadow: var(--sh-2), inset 0 1px 0 var(--highlight);
+    backdrop-filter: blur(14px);
+  }
+  .brand { display: flex; align-items: center; gap: 0.75cqw; }
+  .brand-shield { width: 2.15cqw; height: 2.15cqw; flex: 0 0 auto; filter: drop-shadow(0 0 0.6cqw rgba(63,214,133,0.35)); }
+  .brand-txt .ar { font-size: 1.02cqw; font-weight: 700; color: var(--ink-1); letter-spacing: 0.01em; line-height: 1.15; }
+  .brand-txt .en { font-size: 0.5cqw;  font-weight: 600; color: var(--ink-3); letter-spacing: 0.34em; font-family: 'Manrope'; }
+  .topbar-div { width: 1px; height: 2.1cqw; background: linear-gradient(180deg, transparent, var(--hairline), transparent); }
+  .center-name .ar { font-size: 0.78cqw; font-weight: 600; color: var(--ink-2); line-height: 1.3; }
+  .center-name .en { font-size: 0.5cqw;  font-weight: 600; color: var(--ink-4); letter-spacing: 0.14em; font-family: 'Manrope'; }
+
+  .page-title {
+    margin-inline-start: 0.4cqw;
+    display: flex; align-items: center; gap: 0.55cqw;
+  }
+  .radar-badge { width: 1.7cqw; height: 1.7cqw; position: relative; flex: 0 0 auto; }
+  .radar-badge svg { width: 100%; height: 100%; }
+  .radar-sweep { transform-origin: 50% 50%; animation: sweep 4s linear infinite; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  .page-title h1 { font-size: 0.94cqw; font-weight: 700; color: var(--ink-1); }
+  .page-title .sub { font-size: 0.56cqw; color: var(--ink-3); font-weight: 500; margin-top: 0.1cqw; }
+
+  .topbar-spacer { flex: 1; }
+
+  .clockbox { text-align: center; }
+  .clockbox .t { font-size: 0.92cqw; font-weight: 700; color: var(--ink-1); letter-spacing: 0.04em; }
+  .clockbox .d { font-size: 0.5cqw; color: var(--ink-3); font-weight: 500; }
+
+  .chip-btn {
+    display: inline-flex; align-items: center; gap: 0.4cqw;
+    font-family: inherit; cursor: pointer;
+    font-size: 0.66cqw; font-weight: 600; color: var(--ink-1);
+    background: linear-gradient(180deg, rgba(63, 214, 133, 0.14), rgba(63, 214, 133, 0.05));
+    border: 1px solid rgba(63, 214, 133, 0.28);
+    border-radius: 2cqw;
+    padding: 0.42cqw 0.9cqw;
+    box-shadow: inset 0 1px 0 rgba(210, 255, 232, 0.12), 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: all 0.22s ease;
+  }
+  .chip-btn:hover { border-color: rgba(63, 214, 133, 0.6); box-shadow: 0 0 0.9cqw var(--accent-glow), inset 0 1px 0 rgba(210,255,232,0.15); transform: translateY(-1px); }
+  .chip-btn svg { width: 0.75cqw; height: 0.75cqw; }
+  .chip-btn.ghost { background: rgba(210, 255, 232, 0.04); border-color: var(--hairline); color: var(--ink-2); }
+  .chip-btn.ghost:hover { border-color: rgba(146, 255, 205, 0.3); box-shadow: none; }
+  .ai-dot { width: 0.42cqw; height: 0.42cqw; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0.5cqw var(--accent); animation: pulse-dot 2.2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  FILTER RAIL
+   * ════════════════════════════════════════════════════════════════ */
+  .filter-rail {
+    position: relative; z-index: 3;
+    display: flex; align-items: center; gap: 0.55cqw;
+  }
+  .seg {
+    display: inline-flex;
+    background: rgba(210, 255, 232, 0.045);
+    border: 1px solid var(--hairline);
+    border-radius: 2cqw;
+    padding: 0.14cqw;
+    backdrop-filter: blur(10px);
+    flex: 0 0 auto;
+  }
+  .seg button {
+    font-family: inherit; cursor: pointer;
+    font-size: 0.62cqw; font-weight: 600;
+    color: var(--ink-3);
+    background: transparent; border: 0;
+    border-radius: 1.8cqw;
+    padding: 0.34cqw 0.95cqw;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+  }
+  .seg button:hover { color: var(--ink-1); }
+  .seg button.active {
+    background: linear-gradient(180deg, rgba(63, 214, 133, 0.24), rgba(63, 214, 133, 0.10));
+    color: var(--ink-1);
+    box-shadow: inset 0 1px 0 rgba(210, 255, 232, 0.14), 0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+
+  .f-select-wrap { position: relative; flex: 0 1 auto; min-width: 0; }
+  .f-select {
+    appearance: none; -webkit-appearance: none;
+    font-family: inherit; cursor: pointer;
+    font-size: 0.62cqw; font-weight: 600;
+    color: var(--ink-1);
+    background: linear-gradient(180deg, rgba(210, 255, 232, 0.07), rgba(210, 255, 232, 0.028));
+    border: 1px solid var(--hairline);
+    border-radius: 2cqw;
+    padding: 0.4cqw 0.95cqw;
+    padding-inline-end: 1.9cqw;
+    outline: none;
+    max-width: 15cqw;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(210, 255, 232, 0.06);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+  }
+  .f-select:hover, .f-select:focus { border-color: rgba(63, 214, 133, 0.45); }
+  .f-select.on { border-color: rgba(63, 214, 133, 0.55); background: linear-gradient(180deg, rgba(63, 214, 133, 0.17), rgba(63, 214, 133, 0.06)); box-shadow: 0 0 0.7cqw rgba(63, 214, 133, 0.18); }
+  .f-select option { background: #0b1f16; color: var(--ink-1); font-size: 13px; }
+  .f-caret {
+    position: absolute; inset-inline-end: 0.75cqw; top: 50%;
+    transform: translateY(-50%);
+    width: 0.55cqw; height: 0.55cqw;
+    pointer-events: none; color: var(--ink-3);
+  }
+  .rail-spacer { flex: 1; }
+  .clear-btn {
+    display: none; align-items: center; gap: 0.35cqw;
+    font-family: inherit; cursor: pointer;
+    font-size: 0.6cqw; font-weight: 600; color: var(--gold);
+    background: rgba(216, 180, 90, 0.07);
+    border: 1px solid rgba(216, 180, 90, 0.3);
+    border-radius: 2cqw;
+    padding: 0.36cqw 0.85cqw;
+    transition: all 0.2s ease;
+  }
+  .clear-btn.show { display: inline-flex; }
+  .clear-btn:hover { background: rgba(216, 180, 90, 0.14); }
+  .clear-btn .cnt {
+    display: inline-grid; place-items: center;
+    min-width: 0.95cqw; height: 0.95cqw;
+    border-radius: 50%;
+    background: var(--gold); color: #142012;
+    font-size: 0.55cqw; font-weight: 800;
+  }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 0.4cqw;
+    font-size: 0.56cqw; font-weight: 600; color: var(--ink-3);
+    border: 1px solid var(--hairline); border-radius: 2cqw;
+    padding: 0.34cqw 0.8cqw;
+    background: rgba(210, 255, 232, 0.03);
+  }
+  .live-pill .ld { width: 0.4cqw; height: 0.4cqw; border-radius: 50%; background: var(--risk-low); box-shadow: 0 0 0.45cqw var(--risk-low); animation: pulse-dot 1.8s ease-in-out infinite; }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  KPI BAND
+   * ════════════════════════════════════════════════════════════════ */
+  .kpi-band { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.72cqw; }
+  .kpi {
+    position: relative;
+    display: flex; align-items: center; gap: 1cqw;
+    background: linear-gradient(180deg, var(--glass-strong) 0%, var(--glass) 100%);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    padding: 0.85cqw 1.1cqw;
+    box-shadow: var(--sh-2), inset 0 1px 0 var(--highlight);
+    backdrop-filter: blur(14px);
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; inset-inline-start: 0; top: 14%; bottom: 14%;
+    width: 3px; border-radius: 3px;
+    background: linear-gradient(180deg, var(--seq-5), var(--seq-3));
+    box-shadow: 0 0 0.7cqw var(--accent-glow);
+  }
+  .kpi-ico {
+    width: 2.5cqw; height: 2.5cqw; flex: 0 0 auto;
+    display: grid; place-items: center;
+    border-radius: 0.8cqw;
+    background: radial-gradient(circle at 30% 25%, rgba(63, 214, 133, 0.22), rgba(63, 214, 133, 0.05));
+    border: 1px solid rgba(63, 214, 133, 0.22);
+    box-shadow: inset 0 1px 0 rgba(210, 255, 232, 0.12);
+  }
+  .kpi-ico svg { width: 1.25cqw; height: 1.25cqw; color: var(--seq-5); }
+  .kpi-main { flex: 1; min-width: 0; }
+  .kpi-label { font-size: 0.66cqw; font-weight: 600; color: var(--ink-3); margin-bottom: 0.18cqw; }
+  .kpi-value { font-size: 2.05cqw; font-weight: 800; color: var(--ink-1); line-height: 1.02; letter-spacing: -0.01em; text-shadow: 0 0 1.4cqw rgba(63, 214, 133, 0.22); white-space: nowrap; }
+  .kpi-value .unit { font-size: 0.85cqw; font-weight: 700; color: var(--ink-3); margin-inline-start: 0.25cqw; }
+  .kpi-sub { display: flex; align-items: center; gap: 0.5cqw; margin-top: 0.22cqw; font-size: 0.56cqw; color: var(--ink-3); font-weight: 500; }
+  .delta { display: inline-flex; align-items: center; gap: 0.18cqw; font-weight: 700; }
+  .delta.down { color: var(--seq-5); }
+  .delta.up   { color: var(--risk-high); }
+  .delta svg { width: 0.55cqw; height: 0.55cqw; }
+  .kpi-spark { flex: 0 0 auto; width: 6.4cqw; height: 2.6cqw; opacity: 0.95; }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  PANELS
+   * ════════════════════════════════════════════════════════════════ */
+  .grid-mid, .grid-bot { position: relative; z-index: 2; display: grid; gap: 0.72cqw; min-height: 0; }
+  .grid-mid { grid-template-columns: 1fr 1.16fr 1.24fr; }
+  .grid-bot { grid-template-columns: 1fr 1.06fr 1.34fr; }
+
+  .panel {
+    position: relative;
+    display: flex; flex-direction: column;
+    min-width: 0; min-height: 0;
+    background: linear-gradient(180deg, var(--glass) 0%, var(--glass-light) 100%);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    padding: 0.75cqw 0.95cqw 0.8cqw;
+    box-shadow: var(--sh-2), inset 0 1px 0 var(--highlight);
+    backdrop-filter: blur(14px);
+    overflow: hidden;
+  }
+  .panel-head { display: flex; align-items: center; gap: 0.55cqw; flex: 0 0 auto; padding-bottom: 0.5cqw; }
+  .panel-tick { width: 0.28cqw; height: 1cqw; border-radius: 0.2cqw; background: linear-gradient(180deg, var(--seq-5), var(--seq-3)); box-shadow: 0 0 0.5cqw var(--accent-glow); flex: 0 0 auto; }
+  .panel-title { font-size: 0.78cqw; font-weight: 700; color: var(--ink-1); line-height: 1.2; }
+  .panel-sub { font-size: 0.53cqw; font-weight: 500; color: var(--ink-4); margin-top: 0.08cqw; }
+  .panel-spacer { flex: 1; }
+  .panel-body { flex: 1; min-height: 0; position: relative; }
+
+  /* ── AI narrative panel ───────────────────────────────────────── */
+  .ai-frame { position: relative; border-radius: var(--r-lg); }
+  .ai-frame::before {
+    content: '';
+    position: absolute; inset: -1px;
+    border-radius: var(--r-lg);
+    padding: 1px;
+    background: linear-gradient(120deg, rgba(63,214,133,0.55), rgba(146,255,205,0.08) 30%, rgba(216,180,90,0.35) 65%, rgba(63,214,133,0.45));
+    background-size: 260% 260%;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: ai-border 9s ease infinite;
+    pointer-events: none;
+  }
+  @keyframes ai-border { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  .ai-chip {
+    display: inline-flex; align-items: center; gap: 0.35cqw;
+    font-size: 0.52cqw; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--seq-5);
+    font-family: 'Manrope';
+    border: 1px solid rgba(63, 214, 133, 0.35);
+    background: rgba(63, 214, 133, 0.08);
+    border-radius: 2cqw;
+    padding: 0.22cqw 0.65cqw;
+  }
+  .ai-chip svg { width: 0.6cqw; height: 0.6cqw; }
+  .conf-chip { font-size: 0.52cqw; font-weight: 600; color: var(--ink-3); }
+  .conf-chip b { color: var(--ink-1); font-weight: 700; }
+  .ai-text {
+    font-size: 0.71cqw; line-height: 1.75; font-weight: 400;
+    color: var(--ink-2);
+    padding: 0.15cqw 0.1cqw 0.4cqw;
+  }
+  .ai-text .hl { color: var(--seq-5); font-weight: 700; }
+  .ai-text .hlg { color: var(--gold); font-weight: 700; }
+  .ai-split { height: 1px; background: linear-gradient(90deg, transparent, var(--hairline), transparent); margin: 0.15cqw 0 0.45cqw; }
+  .fc-cap { display: flex; align-items: center; gap: 0.6cqw; font-size: 0.54cqw; color: var(--ink-4); font-weight: 500; margin-bottom: 0.1cqw; }
+  .fc-cap .k { display: inline-flex; align-items: center; gap: 0.3cqw; }
+  .fc-cap .sw  { width: 0.9cqw; height: 0; border-top: 2px solid var(--seq-4); border-radius: 2px; }
+  .fc-cap .swd { width: 0.9cqw; height: 0; border-top: 2px dashed var(--seq-5); }
+  .fc-wrap { flex: 1; min-height: 0; }
+  .fc-wrap svg { width: 100%; height: 100%; display: block; }
+
+  /* ── Map panel ────────────────────────────────────────────────── */
+  .map-wrap { position: absolute; inset: 0; }
+  .map-wrap svg { width: 100%; height: 100%; display: block; }
+  .uae-land { fill: rgba(39, 165, 99, 0.13); stroke: rgba(146, 255, 205, 0.42); stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 0 16px rgba(63, 214, 133, 0.16)); }
+  .uae-dots { fill: rgba(146, 255, 205, 0.11); }
+  .em-bubble { cursor: pointer; transition: opacity 0.25s ease; }
+  .em-bubble circle.core { transition: all 0.25s ease; }
+  .em-bubble:hover circle.core { filter: brightness(1.2); }
+  .em-bubble.dim { opacity: 0.22; }
+  .em-bubble.sel circle.ring { stroke: var(--seq-5); stroke-width: 2; }
+  .em-name  { font-size: 12px; font-weight: 600; fill: var(--ink-2); }
+  .em-count { font-family: 'Manrope'; font-size: 13px; font-weight: 800; fill: #06130c; }
+  .em-count.out { fill: var(--ink-1); }
+  .map-legend { display: flex; align-items: center; gap: 0.5cqw; font-size: 0.54cqw; color: var(--ink-3); font-weight: 600; }
+  .map-grad { flex: 0 0 auto; width: 7cqw; height: 0.42cqw; border-radius: 0.3cqw; background: linear-gradient(-90deg, var(--seq-1), var(--seq-3), var(--seq-5)); border: 1px solid var(--hairline); }
+  .map-hint { font-size: 0.5cqw; color: var(--ink-4); font-weight: 500; }
+
+  /* ── Top violations panel ─────────────────────────────────────── */
+  .tabs {
+    display: inline-flex;
+    background: rgba(210, 255, 232, 0.05);
+    border: 1px solid var(--hairline);
+    border-radius: 1.6cqw;
+    padding: 0.12cqw;
+  }
+  .tabs button {
+    font-family: inherit; cursor: pointer;
+    font-size: 0.56cqw; font-weight: 700;
+    color: var(--ink-3);
+    background: transparent; border: 0;
+    border-radius: 1.4cqw;
+    padding: 0.24cqw 0.72cqw;
+    transition: all 0.22s ease;
+  }
+  .tabs button.active {
+    background: linear-gradient(180deg, rgba(63, 214, 133, 0.28), rgba(63, 214, 133, 0.12));
+    color: var(--ink-1);
+  }
+  .vio-list { position: absolute; inset: 0; overflow-y: auto; padding-inline-end: 0.3cqw; scrollbar-width: thin; scrollbar-color: rgba(146,255,205,0.18) transparent; display: flex; flex-direction: column; gap: 0.42cqw; }
+  .vio-list::-webkit-scrollbar { width: 4px; }
+  .vio-list::-webkit-scrollbar-thumb { background: rgba(146, 255, 205, 0.18); border-radius: 4px; }
+  .vio-row {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 0.55cqw; row-gap: 0.28cqw;
+    align-items: center;
+    padding: 0.42cqw 0.55cqw;
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .vio-row:hover { background: rgba(63, 214, 133, 0.06); border-color: var(--hairline); }
+  .vio-row.sel { background: rgba(63, 214, 133, 0.10); border-color: rgba(63, 214, 133, 0.4); }
+  .vio-rank {
+    grid-row: 1 / 3;
+    width: 1.35cqw; height: 1.35cqw;
+    display: grid; place-items: center;
+    border-radius: 0.45cqw;
+    background: rgba(63, 214, 133, 0.10);
+    border: 1px solid rgba(63, 214, 133, 0.22);
+    font-size: 0.6cqw; font-weight: 800; color: var(--seq-5);
+  }
+  .vio-rank.r1 { background: linear-gradient(180deg, rgba(63,214,133,0.35), rgba(63,214,133,0.14)); color: var(--ink-1); box-shadow: 0 0 0.6cqw rgba(63,214,133,0.25); }
+  .vio-name { font-size: 0.62cqw; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vio-nums { display: flex; align-items: baseline; gap: 0.35cqw; }
+  .vio-count { font-size: 0.78cqw; font-weight: 800; color: var(--ink-1); }
+  .vio-share { font-size: 0.5cqw; font-weight: 600; color: var(--ink-4); }
+  .vio-bar-track { grid-column: 2 / 4; height: 0.34cqw; border-radius: 0.3cqw; background: rgba(210, 255, 232, 0.06); overflow: hidden; }
+  .vio-bar { height: 100%; width: 0; border-radius: 0.3cqw; background: linear-gradient(-90deg, var(--seq-2), var(--seq-4)); box-shadow: 0 0 0.5cqw rgba(63, 214, 133, 0.30); transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* ── Sankey / donut / gauge shared svg text ───────────────────── */
+  .svg-fill { position: absolute; inset: 0; }
+  .svg-fill svg { width: 100%; height: 100%; display: block; }
+  .sk-link { transition: opacity 0.25s ease; cursor: pointer; }
+  .sk-link.dim { opacity: 0.07 !important; }
+  .sk-node-label { font-size: 12.5px; font-weight: 600; fill: var(--ink-2); }
+  .sk-node-count { font-family: 'Manrope'; font-size: 11px; font-weight: 700; fill: var(--ink-4); }
+  .sk-col-title { font-size: 11.5px; font-weight: 700; fill: var(--ink-3); letter-spacing: 0.04em; }
+
+  .legend-row { display: flex; align-items: center; justify-content: center; gap: 0.9cqw; flex-wrap: wrap; }
+  .lg-item { display: inline-flex; align-items: center; gap: 0.32cqw; font-size: 0.56cqw; font-weight: 600; color: var(--ink-3); cursor: pointer; transition: color 0.2s ease; }
+  .lg-item:hover { color: var(--ink-1); }
+  .lg-item.sel { color: var(--ink-1); }
+  .lg-item .val { font-weight: 800; color: var(--ink-2); }
+  .lg-sw { width: 0.62cqw; height: 0.62cqw; flex: 0 0 auto; display: inline-block; }
+
+  .donut-center-val { font-family: 'Manrope', sans-serif; font-size: 34px; font-weight: 800; fill: var(--ink-1); }
+  .donut-center-cap { font-size: 11.5px; font-weight: 600; fill: var(--ink-3); }
+  .donut-seg { cursor: pointer; transition: opacity 0.25s ease, filter 0.25s ease; }
+  .donut-seg:hover { filter: brightness(1.15); }
+  .donut-seg.dim { opacity: 0.25; }
+  .donut-lbl { font-family: 'Manrope'; font-size: 12.5px; font-weight: 800; fill: var(--ink-1); }
+
+  .gauge-val  { font-family: 'Manrope', sans-serif; font-size: 44px; font-weight: 800; fill: var(--ink-1); }
+  .gauge-cap  { font-size: 12px; font-weight: 600; fill: var(--ink-3); }
+  .gauge-tick { font-family: 'Manrope'; font-size: 11px; font-weight: 700; fill: var(--ink-4); }
+  .gauge-needle-g { transition: transform 1s cubic-bezier(0.34, 1.3, 0.5, 1); }
+  .gauge-zone-lbl { font-size: 10.5px; font-weight: 600; fill: var(--ink-4); }
+  .risk-badge {
+    display: inline-flex; align-items: center; gap: 0.35cqw;
+    font-size: 0.6cqw; font-weight: 700;
+    border-radius: 2cqw;
+    padding: 0.26cqw 0.75cqw;
+    border: 1px solid;
+  }
+
+  /* ── Axis / chart text inside SVGs ────────────────────────────── */
+  .ax { font-family: 'Manrope'; font-size: 11px; font-weight: 600; fill: var(--ink-4); }
+  .ax-lbl { font-family: 'Manrope'; font-size: 11.5px; font-weight: 800; fill: var(--ink-1); }
+  .grid-ln { stroke: rgba(146, 255, 205, 0.07); stroke-width: 1; }
+
+  /* ── Tooltip ──────────────────────────────────────────────────── */
+  .tip {
+    position: fixed; z-index: 50;
+    pointer-events: none;
+    background: rgba(8, 22, 15, 0.94);
+    border: 1px solid rgba(63, 214, 133, 0.35);
+    border-radius: 0.5cqw;
+    padding: 0.45cqw 0.7cqw;
+    font-size: 0.58cqw; font-weight: 500; color: var(--ink-2);
+    box-shadow: var(--sh-3);
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    max-width: 16cqw;
+    backdrop-filter: blur(8px);
+  }
+  .tip.show { opacity: 1; transform: translateY(0); }
+  .tip b { color: var(--ink-1); font-weight: 700; }
+  .tip .trow { display: flex; justify-content: space-between; gap: 1cqw; }
+
+  /* ── Footer strip ─────────────────────────────────────────────── */
+  .foot {
+    position: absolute; bottom: 0.22cqw; inset-inline: 1.1cqw;
+    display: flex; justify-content: space-between;
+    font-size: 0.45cqw; color: var(--ink-5); font-weight: 500;
+    z-index: 2; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="dashboard" id="dash">
+
+  <div class="bokeh-layer">
+    <div class="bokeh-dot b-mint k1"></div>
+    <div class="bokeh-dot b-teal k2"></div>
+    <div class="bokeh-dot b-gold k3"></div>
+    <div class="bokeh-dot b-teal k4"></div>
+    <div class="bokeh-dot b-mint k5"></div>
+  </div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-shield" viewBox="0 0 48 48" fill="none">
+        <path d="M24 3 L41 9 V22 C41 33.5 33.8 41.6 24 45 C14.2 41.6 7 33.5 7 22 V9 Z" stroke="#3fd685" stroke-width="2.2" fill="rgba(63,214,133,0.08)" stroke-linejoin="round"/>
+        <path d="M24 10 L34 13.6 V22.2 C34 29.4 29.8 34.6 24 37.4 C18.2 34.6 14 29.4 14 22.2 V13.6 Z" fill="rgba(63,214,133,0.16)"/>
+        <path d="M24 16 L26 21 L31 21.2 L27.2 24.4 L28.6 29.4 L24 26.4 L19.4 29.4 L20.8 24.4 L17 21.2 L22 21 Z" fill="#93f2bd"/>
+      </svg>
+      <div class="brand-txt">
+        <div class="ar">شرطة دبي</div>
+        <div class="en">DUBAI&nbsp;POLICE</div>
+      </div>
+    </div>
+    <div class="topbar-div"></div>
+    <div class="center-name">
+      <div class="ar">مركز التحليل والتنبؤ الأمني</div>
+      <div class="en">SECURITY ANALYTICS &amp; FORECAST</div>
+    </div>
+    <div class="topbar-div"></div>
+    <div class="page-title">
+      <div class="radar-badge">
+        <svg viewBox="0 0 40 40">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(63,214,133,0.25)" stroke-width="1.4"/>
+          <circle cx="20" cy="20" r="11.5" fill="none" stroke="rgba(63,214,133,0.18)" stroke-width="1"/>
+          <circle cx="20" cy="20" r="5.5" fill="none" stroke="rgba(63,214,133,0.14)" stroke-width="1"/>
+          <g class="radar-sweep">
+            <path d="M20 20 L20 2 A18 18 0 0 1 32.7 6.8 Z" fill="url(#sweepGrad)"/>
+          </g>
+          <circle cx="20" cy="20" r="1.8" fill="#93f2bd"/>
+          <circle cx="27" cy="12" r="1.6" fill="#93f2bd"><animate attributeName="opacity" values="1;0.15;1" dur="2.4s" repeatCount="indefinite"/></circle>
+          <defs>
+            <linearGradient id="sweepGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="rgba(63,214,133,0.55)"/>
+              <stop offset="1" stop-color="rgba(63,214,133,0)"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <h1>رادار المخالفات المرورية</h1>
+        <div class="sub">التحليل الفوري والتنبؤ بخطورة السائقين</div>
+      </div>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="clockbox">
+      <div class="t num" id="clock">—:—</div>
+      <div class="d" id="clockDate">—</div>
+    </div>
+    <div class="topbar-div"></div>
+    <button class="chip-btn" id="aiBtn">
+      <span class="ai-dot"></span>
+      المساعد الذكي
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17.6l-1.9-5.7L4.4 10l5.7-1.9z" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="chip-btn ghost">
+      الرئيسية
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <!-- ═══ FILTER RAIL ═══ -->
+  <div class="filter-rail">
+    <div class="seg" id="segRes">
+      <button data-v="all" class="active">الكل</button>
+      <button data-v="مواطن">مواطن</button>
+      <button data-v="مقيم">مقيم</button>
+    </div>
+
+    <div class="f-select-wrap">
+      <select class="f-select" id="selNat"><option value="">الجنسية · الكل</option></select>
+      <svg class="f-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="f-select-wrap">
+      <select class="f-select" id="selPlate"><option value="">مصدر اللوحة · الكل</option></select>
+      <svg class="f-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="f-select-wrap">
+      <select class="f-select" id="selText"><option value="">نص المخالفة · الكل</option></select>
+      <svg class="f-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="f-select-wrap">
+      <select class="f-select" id="selVeh"><option value="">صنف المركبة · الكل</option></select>
+      <svg class="f-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <button class="clear-btn" id="clearBtn">
+      مسح الفلاتر
+      <span class="cnt num" id="clearCnt">0</span>
+    </button>
+
+    <div class="rail-spacer"></div>
+    <div class="live-pill"><span class="ld"></span> بيانات محدّثة لحظياً</div>
+  </div>
+
+  <!-- ═══ KPI BAND ═══ -->
+  <div class="kpi-band">
+    <div class="kpi">
+      <div class="kpi-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v13H4z M4 9h16 M8 5v4" stroke-linejoin="round"/><path d="M7.5 13.5h5 M7.5 15.8h8" stroke-linecap="round"/></svg>
+      </div>
+      <div class="kpi-main">
+        <div class="kpi-label">عدد المخالفات</div>
+        <div class="kpi-value num" id="kpiCount">0</div>
+        <div class="kpi-sub"><span class="delta down" id="kpiCountDelta"></span><span id="kpiCountSub"></span></div>
+      </div>
+      <svg class="kpi-spark" id="sparkCount" viewBox="0 0 120 48" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9 M15 9.5c-0.6-1-1.7-1.6-3-1.6-1.8 0-3.2 1-3.2 2.3 0 3 6.4 1.5 6.4 4.4 0 1.3-1.4 2.3-3.2 2.3-1.3 0-2.4-0.6-3-1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="kpi-main">
+        <div class="kpi-label">قيمة المخالفات</div>
+        <div class="kpi-value num"><span id="kpiValue">0</span><span class="unit">د.إ</span></div>
+        <div class="kpi-sub"><span id="kpiValueSub"></span></div>
+      </div>
+      <svg class="kpi-spark" id="sparkValue" viewBox="0 0 120 48" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7.5 3v5.2c0 4.9-3.2 8.6-7.5 10.3-4.3-1.7-7.5-5.4-7.5-10.3V6z" stroke-linejoin="round"/><path d="M12 8v4.5 M12 15.5v0.1" stroke-linecap="round"/></svg>
+      </div>
+      <div class="kpi-main">
+        <div class="kpi-label">إجمالي السائقين الخطرين</div>
+        <div class="kpi-value num" id="kpiDanger">0</div>
+        <div class="kpi-sub"><span class="delta up" id="kpiDangerPct"></span><span>من إجمالي السائقين المسجّلين</span></div>
+      </div>
+      <svg class="kpi-spark" id="sparkDanger" viewBox="0 0 120 48" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <!-- ═══ MIDDLE ROW · top-violations | map | AI+forecast ═══ -->
+  <div class="grid-mid">
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-tick"></div>
+        <div>
+          <div class="panel-title">نصوص المخالفات الأعلى تكراراً</div>
+          <div class="panel-sub">انقر على أي مخالفة لتصفية اللوحة</div>
+        </div>
+        <div class="panel-spacer"></div>
+        <div class="tabs" id="topTabs">
+          <button data-n="3">أعلى 3</button>
+          <button data-n="5">أعلى 5</button>
+          <button data-n="10" class="active">أعلى 10</button>
+        </div>
+      </div>
+      <div class="panel-body"><div class="vio-list" id="vioList"></div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-tick"></div>
+        <div>
+          <div class="panel-title">المخالفات المرورية حسب الإمارة</div>
+          <div class="panel-sub" id="mapSub">موقع تسجيل المخالفة</div>
+        </div>
+        <div class="panel-spacer"></div>
+        <div class="map-hint">انقر على إمارة للتصفية</div>
+      </div>
+      <div class="panel-body"><div class="map-wrap" id="mapWrap"></div></div>
+      <div class="panel-head" style="padding-bottom:0; padding-top:0.45cqw;">
+        <div class="map-legend">
+          <span>أقل <b class="num" id="legMin">—</b></span>
+          <div class="map-grad"></div>
+          <span>أعلى <b class="num" id="legMax">—</b></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel ai-frame">
+      <div class="panel-head">
+        <div class="panel-tick" style="background: linear-gradient(180deg, var(--gold), var(--seq-3));"></div>
+        <div class="panel-title">الذكاء الاصطناعي والتنبؤ</div>
+        <div class="panel-spacer"></div>
+        <span class="conf-chip">ثقة النموذج <b class="num">95%</b></span>
+        <span class="ai-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17.6l-1.9-5.7L4.4 10l5.7-1.9z" stroke-linejoin="round"/></svg>AI&nbsp;·&nbsp;NARRATIVE</span>
+      </div>
+      <div class="ai-text" id="aiText"></div>
+      <div class="ai-split"></div>
+      <div class="fc-cap">
+        <span>مؤشر السائقين عالي الخطورة — التنبؤ (2016–2026)</span>
+        <div class="panel-spacer" style="flex:1;"></div>
+        <span class="k"><span class="sw"></span> فعلي</span>
+        <span class="k"><span class="swd"></span> توقّع</span>
+      </div>
+      <div class="fc-wrap" id="fcWrap"></div>
+    </section>
+  </div>
+
+  <!-- ═══ BOTTOM ROW · gauge | donut | sankey ═══ -->
+  <div class="grid-bot">
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-tick"></div>
+        <div>
+          <div class="panel-title">متوسط درجة الخطورة</div>
+          <div class="panel-sub">لكل السائقين ضمن النطاق المحدد</div>
+        </div>
+        <div class="panel-spacer"></div>
+        <span class="risk-badge" id="gaugeBadge"></span>
+      </div>
+      <div class="panel-body"><div class="svg-fill" id="gaugeWrap"></div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-tick"></div>
+        <div>
+          <div class="panel-title">تصنيف المخالفات حسب خطورة السائق</div>
+          <div class="panel-sub">انقر على فئة لتصفية اللوحة</div>
+        </div>
+      </div>
+      <div class="panel-body"><div class="svg-fill" id="donutWrap"></div></div>
+      <div class="legend-row" id="donutLegend"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-tick"></div>
+        <div>
+          <div class="panel-title">معاهد السياقة مقابل فئة الخطورة</div>
+          <div class="panel-sub">توزيع السائقين من كل معهد على فئات الخطورة</div>
+        </div>
+        <div class="panel-spacer"></div>
+        <div class="map-hint">مرّر على المسارات للتفاصيل</div>
+      </div>
+      <div class="panel-body"><div class="svg-fill" id="sankeyWrap"></div></div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <span>مصدر البيانات: منظومة المخالفات المرورية — بيانات تجريبية للعرض</span>
+    <span>آخر تحديث <span class="num" id="footTime">—</span> · تُحدَّث اللوحة تلقائياً</span>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+ *  DATA — deterministic synthetic dataset
+ *  Unfiltered aggregates reproduce the source dashboard exactly:
+ *  2,462 violations · 7,865,700 AED · 750 dangerous drivers ·
+ *  risk classes 791/681/506/484 · emirates 717 … 107 · mean risk 0.57
+ * ══════════════════════════════════════════════════════════════════ */
+'use strict';
+
+function lcg(seed) { let s = seed >>> 0; return () => ((s = (1664525 * s + 1013904223) >>> 0) / 4294967296); }
+function shuffled(arr, rnd) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function expand(pairs) { const out = []; for (const [v, n] of pairs) for (let i = 0; i < n; i++) out.push(v); return out; }
+const fmt = n => n.toLocaleString('en-US');
+const F1 = n => (Math.round(n * 10) / 10).toLocaleString('en-US');
+
+const TEXTS = [
+  ['تجاوز السرعة المقررة بأكثر من 30 وأقل من 60 كم/س', 198, 1500],
+  ['التجاوز من الكتف الأيمن', 160, 8500],
+  ['التجاوز الخطر', 143, 2000],
+  ['الدخول إلى الطريق دون التأكد من خلوّه', 128, 1000],
+  ['استخدام الهاتف المتحرك أثناء القيادة', 121, 9100],
+  ['عدم ربط حزام الأمان أثناء القيادة', 117, 400],
+  ['تجاوز الإشارة الضوئية الحمراء', 104, 1000],
+  ['تجاوز السرعة المقررة بأكثر من 60 كم/س', 98, 3000],
+  ['عدم ترك مسافة كافية بين المركبات', 92, 400],
+  ['التوقف في وسط الطريق دون سبب', 85, 1000],
+  ['القيادة بتهور وبصورة خطرة', 84, 2000],
+  ['عدم إعطاء أولوية المرور للمشاة', 82, 500],
+  ['تغيير المسار المفاجئ دون التأكد', 80, 1000],
+  ['قيادة مركبة دون لوحات', 78, 3000],
+  ['عدم الالتزام بخط السير الإلزامي', 76, 400],
+  ['الوقوف في الأماكن غير المخصصة', 74, 500],
+  ['السير عكس اتجاه حركة المرور', 72, 600],
+  ['تظليل زجاج المركبة فوق النسبة المسموحة', 70, 1500],
+  ['الإزعاج باستخدام أجهزة التنبيه', 68, 2000],
+  ['تحميل ركاب بصورة تعرضهم للخطر', 66, 500],
+  ['عدم استخدام الإشارات عند التحويل', 64, 800],
+  ['قيادة مركبة منتهية الملكية', 62, 400],
+  ['تعريض حياة مستخدمي الطريق للخطر', 60, 50000],
+  ['انشغال السائق بغير الطريق أثناء القيادة', 60, 300],
+  ['عدم التقيد بإشارات رجل الأمن', 58, 500],
+  ['ترك المركبة والمحرك في وضع التشغيل', 56, 400],
+  ['عدم تثبيت الحمولة بإحكام', 54, 600],
+  ['القيادة ليلاً دون استخدام الأنوار', 52, 800],
+];
+const EMIRATES = [['دبي', 717], ['أبوظبي', 552], ['الشارقة', 431], ['رأس الخيمة', 246], ['الفجيرة', 222], ['عجمان', 187], ['أم القيوين', 107]];
+const NATS = [['الإمارات', 512], ['الهند', 468], ['باكستان', 342], ['مصر', 258], ['الفلبين', 196], ['بنغلاديش', 168], ['الأردن', 132], ['سوريا', 118], ['بريطانيا', 96], ['جنسيات أخرى', 172]];
+const PLATES = [['دبي', 802], ['أبوظبي', 468], ['الشارقة', 396], ['رأس الخيمة', 214], ['عجمان', 188], ['الفجيرة', 158], ['خارج الدولة', 140], ['أم القيوين', 96]];
+const VEHICLES = [['مركبة خفيفة', 1608], ['شاحنة ثقيلة', 306], ['حافلة', 214], ['دراجة نارية', 176], ['مركبة أجرة', 158]];
+const INSTITUTES = [['معهد الإمارات للسياقة', 412], ['مدرسة دبي لتعليم القيادة', 355], ['بلحصا لتعليم القيادة', 296], ['جلاداري لقيادة السيارات', 244], ['الأهلي للسياقة', 208], ['درايف دبي', 164], ['معاهد أخرى', 120]];
+
+/* risk classes: key, label, color, driver count, drivers with 2 violations, violations, score range */
+const CLASSES = [
+  { k: 'low',  label: 'منخفضة', color: 'var(--risk-low)',  hex: '#0ca30c', drivers: 549, dbl: 242, viol: 791, s0: 0.270, s1: 0.3936 },
+  { k: 'mod',  label: 'متوسطة', color: 'var(--risk-mod)',  hex: '#fab219', drivers: 500, dbl: 181, viol: 681, s0: 0.42,  s1: 0.58 },
+  { k: 'high', label: 'مرتفعة', color: 'var(--risk-high)', hex: '#ec835a', drivers: 400, dbl: 106, viol: 506, s0: 0.62,  s1: 0.78 },
+  { k: 'crit', label: 'حرجة',   color: 'var(--risk-crit)', hex: '#d03b3b', drivers: 350, dbl: 134, viol: 484, s0: 0.82,  s1: 0.97 },
+];
+/* legend shapes = secondary (non-color) encoding for the risk scale */
+const SHAPES = {
+  low:  '<circle cx="6" cy="6" r="5" fill="CLR"/>',
+  mod:  '<rect x="1.2" y="1.2" width="9.6" height="9.6" rx="2" fill="CLR"/>',
+  high: '<path d="M6 0.8 L11.4 10.4 H0.6 Z" fill="CLR"/>',
+  crit: '<path d="M6 0.4 L11.6 6 L6 11.6 L0.4 6 Z" fill="CLR"/>',
+};
+const shapeSvg = (k, clr) => `<svg class="lg-sw" viewBox="0 0 12 12">${SHAPES[k].replace('CLR', clr)}</svg>`;
+
+/* forecast — national model, 2016 → 2026 */
+const FC_YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+const FC_VALS  = [142, 138, 131, 133, 118, 124, 119, 114, 110, 105, 100];
+const FC_SPLIT = 8; /* index of last actual year (2024) */
+
+/* ── build drivers ── */
+const rnd = lcg(20260803);
+const drivers = [];
+{
+  const instPool = shuffled(expand(INSTITUTES), rnd);
+  let id = 0;
+  for (const c of CLASSES) {
+    for (let i = 0; i < c.drivers; i++) {
+      drivers.push({ id: id, cls: c.k, score: c.s0 + (c.s1 - c.s0) * ((i + 0.5) / c.drivers), inst: instPool[id] });
+      id++;
+    }
+  }
+}
+
+/* ── build violation rows: zip independently-shuffled exact marginals ── */
+const rows = [];
+{
+  const textPool  = shuffled(expand(TEXTS.map(t => [t, t[1]])), rnd);
+  const emPool    = shuffled(expand(EMIRATES), rnd);
+  const natPool   = shuffled(expand(NATS), rnd);
+  const platePool = shuffled(expand(PLATES), rnd);
+  const vehPool   = shuffled(expand(VEHICLES), rnd);
+  const drvRefs = [];
+  for (const c of CLASSES) {
+    const clsDrivers = drivers.filter(d => d.cls === c.k);
+    clsDrivers.forEach((d, i) => { drvRefs.push(d); if (i < c.dbl) drvRefs.push(d); });
+  }
+  const drvPool = shuffled(drvRefs, rnd);
+  for (let i = 0; i < 2462; i++) {
+    const t = textPool[i], d = drvPool[i], nat = natPool[i];
+    rows.push({
+      text: t[0], fine: t[2],
+      emirate: emPool[i], nat: nat, res: nat === 'الإمارات' ? 'مواطن' : 'مقيم',
+      plate: platePool[i], veh: vehPool[i],
+      drv: d, cls: d.cls,
+    });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  FILTER STATE
+ * ══════════════════════════════════════════════════════════════════ */
+const F = { res: 'all', nat: '', plate: '', text: '', veh: '', emirate: '', cls: '' };
+const filtered = () => rows.filter(r =>
+  (F.res === 'all' || r.res === F.res) &&
+  (!F.nat || r.nat === F.nat) &&
+  (!F.plate || r.plate === F.plate) &&
+  (!F.text || r.text === F.text) &&
+  (!F.veh || r.veh === F.veh) &&
+  (!F.emirate || r.emirate === F.emirate) &&
+  (!F.cls || r.cls === F.cls));
+const activeCount = () => (F.res !== 'all') + !!F.nat + !!F.plate + !!F.text + !!F.veh + !!F.emirate + !!F.cls;
+
+/* ══════════════════════════════════════════════════════════════════
+ *  HELPERS — tooltip, number animation
+ * ══════════════════════════════════════════════════════════════════ */
+const tip = document.getElementById('tip');
+function showTip(html, ev) {
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  moveTip(ev);
+}
+function moveTip(ev) {
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX - w - 14; if (x < 8) x = ev.clientX + 14;
+  let y = ev.clientY - h / 2; y = Math.max(8, Math.min(innerHeight - h - 8, y));
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip() { tip.classList.remove('show'); }
+
+const prevVals = {};
+function animNum(id, to, format, suffix) {
+  const el = document.getElementById(id);
+  const from = prevVals[id] ?? 0;
+  prevVals[id] = to;
+  const t0 = performance.now(), dur = 750;
+  const fmtFn = format || fmt;
+  function step(t) {
+    const p = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmtFn(Math.round((from + (to - from) * e) * 100) / 100) + (suffix || '');
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* deterministic per-context wobble series for sparklines */
+function wobble(total, seed, n) {
+  const r = lcg(seed), out = [];
+  let v = total / n;
+  for (let i = 0; i < n; i++) out.push(v * (0.72 + r() * 0.56));
+  return out;
+}
+function sparkline(elId, series, stroke) {
+  const w = 120, h = 48, pad = 3;
+  const mx = Math.max(...series), mn = Math.min(...series);
+  const pts = series.map((v, i) => [pad + i * (w - 2 * pad) / (series.length - 1), h - pad - (v - mn) / (mx - mn || 1) * (h - 2 * pad - 6)]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const last = pts[pts.length - 1];
+  document.getElementById(elId).innerHTML = `
+    <defs><linearGradient id="${elId}-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${stroke}" stop-opacity="0.30"/><stop offset="1" stop-color="${stroke}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${d} L ${last[0].toFixed(1)} ${h - pad} L ${pad} ${h - pad} Z" fill="url(#${elId}-g)"/>
+    <path d="${d}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3" fill="${stroke}"/>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  KPIs
+ * ══════════════════════════════════════════════════════════════════ */
+function renderKPIs(rs) {
+  const total = rs.length;
+  const value = rs.reduce((s, r) => s + r.fine, 0);
+  const dSet = new Set();
+  const allDrv = new Set();
+  rs.forEach(r => { allDrv.add(r.drv.id); if (r.drv.score >= 0.6) dSet.add(r.drv.id); });
+  const danger = dSet.size;
+
+  animNum('kpiCount', total);
+  animNum('kpiValue', value);
+  animNum('kpiDanger', danger);
+  document.getElementById('kpiCountDelta').innerHTML =
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M17 9l-5 6-5-6" stroke-linecap="round" stroke-linejoin="round"/></svg> 4.2%`;
+  document.getElementById('kpiCountSub').textContent = 'مقارنة بالفترة السابقة';
+  document.getElementById('kpiValueSub').textContent = 'متوسط الغرامة ' + fmt(total ? Math.round(value / total) : 0) + ' د.إ';
+  document.getElementById('kpiDangerPct').textContent = allDrv.size ? (danger / allDrv.size * 100).toFixed(1) + '%' : '0%';
+
+  sparkline('sparkCount', wobble(total, 11, 16), '#3fd685');
+  sparkline('sparkValue', wobble(value, 23, 16), '#d8b45a');
+  sparkline('sparkDanger', wobble(danger + 1, 37, 16), '#ec835a');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  TOP VIOLATIONS LIST
+ * ══════════════════════════════════════════════════════════════════ */
+let topN = 10;
+function renderVioList(rs) {
+  const by = new Map();
+  rs.forEach(r => by.set(r.text, (by.get(r.text) || 0) + 1));
+  const sorted = [...by.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN);
+  const max = sorted.length ? sorted[0][1] : 1;
+  const total = rs.length || 1;
+  const host = document.getElementById('vioList');
+  host.innerHTML = sorted.map(([t, n], i) => `
+    <div class="vio-row ${F.text === t ? 'sel' : ''}" data-t="${t}">
+      <div class="vio-rank ${i === 0 ? 'r1' : ''} num">${i + 1}</div>
+      <div class="vio-name" title="${t}">${t}</div>
+      <div class="vio-nums"><span class="vio-count num">${fmt(n)}</span><span class="vio-share num">${(n / total * 100).toFixed(1)}%</span></div>
+      <div class="vio-bar-track"><div class="vio-bar" data-w="${(n / max * 100).toFixed(1)}"></div></div>
+    </div>`).join('');
+  requestAnimationFrame(() => host.querySelectorAll('.vio-bar').forEach(b => b.style.width = b.dataset.w + '%'));
+  host.querySelectorAll('.vio-row').forEach(el => {
+    el.addEventListener('click', () => {
+      F.text = (F.text === el.dataset.t) ? '' : el.dataset.t;
+      document.getElementById('selText').value = F.text;
+      applyFilters();
+    });
+    el.addEventListener('mousemove', ev => {
+      const t = el.dataset.t, n = by.get(t);
+      showTip(`<b>${t}</b><div class="trow"><span>عدد المخالفات</span><b class="num">${fmt(n)}</b></div><div class="trow"><span>النسبة</span><b class="num">${(n / total * 100).toFixed(1)}%</b></div>`, ev);
+    });
+    el.addEventListener('mouseleave', hideTip);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  UAE MAP
+ * ══════════════════════════════════════════════════════════════════ */
+const UAE_OUTLINE = '41,212.9 96.2,242 169.8,225.5 261.8,225.5 303.2,193.5 330.8,157.6 358.4,135.2 384.2,111 409,86.8 441.2,62.5 453.2,36.3 464.2,48 476.2,86.8 479.8,130.4 468.8,154.6 441.2,145 430.2,178.9 425.6,217.7 409,246.8 404.4,295.3 372.2,361.3 243.4,356.4 131.2,339.9 76,287.5';
+/* bubble anchor + label placement per emirate (lightly nudged apart for hit targets) */
+const EM_POS = {
+  'أبوظبي':     { x: 238.8, y: 247, lx: 238.8, ly: 247, inb: true },
+  'دبي':        { x: 374,   y: 123, lx: 374,   ly: 123, inb: true },
+  'الشارقة':    { x: 400,   y: 99,  lx: 292,   ly: 62,  inb: false },
+  'عجمان':      { x: 415,   y: 80,  lx: 322,   ly: 20,  inb: false },
+  'أم القيوين': { x: 429,   y: 62,  lx: 384,   ly: 42,  inb: false },
+  'رأس الخيمة': { x: 447,   y: 44,  lx: 497,   ly: 34,  inb: false },
+  'الفجيرة':    { x: 476.2, y: 128.5, lx: 478, ly: 182, inb: false },
+};
+const SEQ = ['#1a5c3a', '#1f7a4b', '#27a563', '#3fd685', '#93f2bd'];
+
+function renderMap(rs) {
+  const by = new Map(EMIRATES.map(([e]) => [e, 0]));
+  rs.forEach(r => by.set(r.emirate, by.get(r.emirate) + 1));
+  const vals = [...by.values()];
+  const mx = Math.max(...vals, 1), mn = Math.min(...vals);
+  document.getElementById('legMax').textContent = '(' + fmt(mx) + ')';
+  document.getElementById('legMin').textContent = '(' + fmt(mn) + ')';
+
+  /* dotted land texture */
+  let dots = '';
+  const step = 13;
+  for (let gx = 40; gx < 490; gx += step) for (let gy = 30; gy < 370; gy += step) {
+    if (pointInPoly(gx, gy)) dots += `<circle cx="${gx}" cy="${gy + (Math.floor(gx / step) % 2) * step / 2}" r="1.1" class="uae-dots"/>`;
+  }
+
+  let bubbles = '';
+  [...by.entries()].sort((a, b) => b[1] - a[1]).forEach(([em, n]) => {
+    const p = EM_POS[em];
+    const r = 8 + Math.sqrt(n / mx) * 21;
+    const ci = mx === mn ? 4 : Math.min(4, Math.floor((n - mn) / (mx - mn + 0.001) * 5));
+    const clr = SEQ[ci];
+    const dim = F.emirate && F.emirate !== em;
+    const sel = F.emirate === em;
+    const inside = p.inb && r > 17;
+    bubbles += `<g class="em-bubble ${dim ? 'dim' : ''} ${sel ? 'sel' : ''}" data-em="${em}" data-n="${n}">
+      ${p.inb ? '' : `<path d="M${p.lx} ${p.ly + 12} L${p.x} ${p.y}" stroke="rgba(146,255,205,0.28)" stroke-width="1" stroke-dasharray="2 3"/>`}
+      <circle class="halo" cx="${p.x}" cy="${p.y}" r="${r + 5}" fill="${clr}" opacity="0.13"/>
+      <circle class="ring" cx="${p.x}" cy="${p.y}" r="${r + 2.5}" fill="none" stroke="rgba(146,255,205,0.22)" stroke-width="1"/>
+      <circle class="core" cx="${p.x}" cy="${p.y}" r="${r}" fill="${clr}" opacity="0.92" filter="url(#bGlow)"/>
+      ${inside
+        ? `<text class="em-count" x="${p.x}" y="${p.y + 4.5}" text-anchor="middle">${fmt(n)}</text>
+           <text class="em-name" x="${p.x}" y="${p.y + r + 15}" text-anchor="middle">${em}</text>`
+        : `<text class="em-name" x="${p.lx}" y="${p.ly}" text-anchor="middle">${em}</text>
+           <text class="em-count out" x="${p.lx}" y="${p.ly + 13}" text-anchor="middle" font-size="12">${fmt(n)}</text>`}
+    </g>`;
+  });
+
+  document.getElementById('mapWrap').innerHTML = `
+    <svg viewBox="0 0 536 385" preserveAspectRatio="xMidYMid meet">
+      <defs><filter id="bGlow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3fd685" flood-opacity="0.35"/></filter></defs>
+      <polygon points="${UAE_OUTLINE}" class="uae-land"/>
+      ${dots}${bubbles}
+    </svg>`;
+
+  document.querySelectorAll('.em-bubble').forEach(g => {
+    g.addEventListener('click', () => { F.emirate = (F.emirate === g.dataset.em) ? '' : g.dataset.em; applyFilters(); });
+    g.addEventListener('mousemove', ev => {
+      const n = +g.dataset.n, tot = rs.length || 1;
+      showTip(`<b>${g.dataset.em}</b><div class="trow"><span>المخالفات</span><b class="num">${fmt(n)}</b></div><div class="trow"><span>النسبة</span><b class="num">${(n / tot * 100).toFixed(1)}%</b></div>`, ev);
+    });
+    g.addEventListener('mouseleave', hideTip);
+  });
+}
+/* point-in-polygon for the dotted texture */
+const POLY = UAE_OUTLINE.split(' ').map(s => s.split(',').map(Number));
+function pointInPoly(x, y) {
+  let inside = false;
+  for (let i = 0, j = POLY.length - 1; i < POLY.length; j = i++) {
+    const [xi, yi] = POLY[i], [xj, yj] = POLY[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  AI NARRATIVE + FORECAST
+ * ══════════════════════════════════════════════════════════════════ */
+function renderAI(rs) {
+  const total = rs.length;
+  const value = rs.reduce((s, r) => s + r.fine, 0);
+  const dSet = new Set(), allDrv = new Set();
+  rs.forEach(r => { allDrv.add(r.drv.id); if (r.drv.score >= 0.6) dSet.add(r.drv.id); });
+  const by = new Map();
+  rs.forEach(r => by.set(r.text, (by.get(r.text) || 0) + 1));
+  const top = [...by.entries()].sort((a, b) => b[1] - a[1])[0];
+  const byEm = new Map();
+  rs.forEach(r => byEm.set(r.emirate, (byEm.get(r.emirate) || 0) + 1));
+  const topEm = [...byEm.entries()].sort((a, b) => b[1] - a[1])[0];
+  const pct = allDrv.size ? (dSet.size / allDrv.size * 100).toFixed(1) : '0';
+
+  document.getElementById('aiText').innerHTML = total === 0
+    ? 'لا توجد سجلات ضمن النطاق المحدد — جرّب توسيع الفلاتر.'
+    : `يوجد <span class="hl num">${fmt(dSet.size)}</span> سائقاً ضمن قائمة الخطر يمثّلون <span class="hl num">${pct}%</span> من إجمالي السائقين. بلغت قيمة المخالفات <span class="hlg num">${(value / 1e6).toFixed(2)} مليون</span> درهم عبر <span class="hl num">${fmt(total)}</span> مخالفة، وتتصدّر «${top ? top[0] : '—'}» الأنماط الأكثر تكراراً، فيما تسجّل <span class="hl">${topEm ? topEm[0] : '—'}</span> النصيب الأكبر. يشير النموذج التنبؤي إلى تراجع مؤشر السائقين عالي الخطورة نحو <span class="hl num">100</span> بحلول 2026.`;
+}
+
+function renderForecast() {
+  const W = 560, H = 200, padL = 34, padR = 30, padT = 26, padB = 26;
+  const y0 = 90, y1 = 150;
+  const X = i => padL + i * (W - padL - padR) / (FC_YEARS.length - 1);
+  const Y = v => H - padB - (v - y0) / (y1 - y0) * (H - padT - padB);
+  const pts = FC_VALS.map((v, i) => [X(i), Y(v)]);
+  const seg = (a, b) => pts.slice(a, b + 1).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const dAct = seg(0, FC_SPLIT), dFc = seg(FC_SPLIT, FC_VALS.length - 1);
+  /* confidence band on the forecast arm */
+  const band = [];
+  for (let i = FC_SPLIT; i < FC_VALS.length; i++) band.push([X(i), Y(FC_VALS[i] + (i - FC_SPLIT) * 4.5)]);
+  for (let i = FC_VALS.length - 1; i >= FC_SPLIT; i--) band.push([X(i), Y(FC_VALS[i] - (i - FC_SPLIT) * 4.5)]);
+  const dBand = band.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ' Z';
+
+  const gridY = [100, 120, 140];
+  document.getElementById('fcWrap').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" id="fcSvg" style="direction:ltr">
+      <defs>
+        <linearGradient id="fcArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3fd685" stop-opacity="0.22"/><stop offset="1" stop-color="#3fd685" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${gridY.map(v => `<line class="grid-ln" x1="${padL}" x2="${W - padR}" y1="${Y(v)}" y2="${Y(v)}"/>${v === 140 ? '' : `<text class="ax" x="${padL - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`}`).join('')}
+      <path d="${dAct} L ${pts[FC_SPLIT][0].toFixed(1)} ${H - padB} L ${padL} ${H - padB} Z" fill="url(#fcArea)"/>
+      <path d="${dBand}" fill="rgba(147,242,189,0.09)"/>
+      <line x1="${pts[FC_SPLIT][0]}" x2="${pts[FC_SPLIT][0]}" y1="${padT - 6}" y2="${H - padB}" stroke="rgba(216,180,90,0.35)" stroke-width="1" stroke-dasharray="3 4"/>
+      <text class="ax" x="${pts[FC_SPLIT][0]}" y="${padT - 11}" text-anchor="middle" fill="#d8b45a">اليوم</text>
+      <path d="${dAct}" fill="none" stroke="#3fd685" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${dFc}" fill="none" stroke="#93f2bd" stroke-width="2.2" stroke-dasharray="7 6" stroke-linecap="round"/>
+      ${pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === FC_SPLIT || i === FC_VALS.length - 1 || i === 0 ? 4 : 2.8}" fill="${i > FC_SPLIT ? '#93f2bd' : '#3fd685'}" stroke="#0a1a12" stroke-width="1.6"/>`).join('')}
+      <text class="ax-lbl" x="${pts[0][0]}" y="${pts[0][1] - 10}" text-anchor="middle">${FC_VALS[0]}</text>
+      <text class="ax-lbl" x="${pts[FC_VALS.length - 1][0]}" y="${pts[FC_VALS.length - 1][1] - 11}" text-anchor="middle" fill="#93f2bd">${FC_VALS[FC_VALS.length - 1]}</text>
+      ${FC_YEARS.map((yr, i) => i % 2 === 0 ? `<text class="ax" x="${X(i)}" y="${H - 7}" text-anchor="middle">${yr}</text>` : '').join('')}
+      <rect id="fcHit" x="${padL}" y="${padT}" width="${W - padL - padR}" height="${H - padT - padB}" fill="transparent"/>
+      <g id="fcCross" style="display:none">
+        <line id="fcCrossLn" y1="${padT}" y2="${H - padB}" stroke="rgba(146,255,205,0.3)" stroke-width="1"/>
+        <circle id="fcCrossPt" r="5" fill="none" stroke="#93f2bd" stroke-width="2"/>
+      </g>
+    </svg>`;
+
+  const svg = document.getElementById('fcSvg');
+  const hit = document.getElementById('fcHit');
+  hit.addEventListener('mousemove', ev => {
+    const box = svg.getBoundingClientRect();
+    const mx = (ev.clientX - box.left) / box.width * W;
+    let best = 0, bd = 1e9;
+    pts.forEach((p, i) => { const d = Math.abs(p[0] - mx); if (d < bd) { bd = d; best = i; } });
+    const g = document.getElementById('fcCross');
+    g.style.display = '';
+    document.getElementById('fcCrossLn').setAttribute('x1', pts[best][0]);
+    document.getElementById('fcCrossLn').setAttribute('x2', pts[best][0]);
+    const pt = document.getElementById('fcCrossPt');
+    pt.setAttribute('cx', pts[best][0]); pt.setAttribute('cy', pts[best][1]);
+    showTip(`<b>${FC_YEARS[best]}</b> ${best > FC_SPLIT ? '· توقّع' : ''}<div class="trow"><span>المؤشر</span><b class="num">${FC_VALS[best]}</b></div>`, ev);
+  });
+  hit.addEventListener('mouseleave', () => { document.getElementById('fcCross').style.display = 'none'; hideTip(); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  DONUT
+ * ══════════════════════════════════════════════════════════════════ */
+function arcPath(cx, cy, r0, r1, a0, a1) {
+  const p = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const [x0, yy0] = p(r1, a0), [x1, yy1] = p(r1, a1), [x2, y2] = p(r0, a1), [x3, y3] = p(r0, a0);
+  const large = (a1 - a0) > Math.PI ? 1 : 0;
+  return `M ${x0.toFixed(2)} ${yy0.toFixed(2)} A ${r1} ${r1} 0 ${large} 1 ${x1.toFixed(2)} ${yy1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${r0} ${r0} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
+function renderDonut(rs) {
+  const counts = CLASSES.map(c => ({ ...c, n: rs.filter(r => r.cls === c.k).length }));
+  const total = rs.length;
+  const cx = 150, cy = 122, r0 = 62, r1 = 96;
+  const gap = 0.045; /* rad gap ≈ 2px surface spacer */
+  let a = -Math.PI / 2;
+  let segs = '';
+  counts.forEach(c => {
+    if (!c.n) return;
+    const sweep = c.n / (total || 1) * Math.PI * 2;
+    const a0 = a + gap / 2, a1 = a + sweep - gap / 2;
+    if (a1 > a0) {
+      const mid = (a0 + a1) / 2;
+      const lr = (r0 + r1) / 2;
+      const big = sweep > 0.5;
+      segs += `<g class="donut-seg ${F.cls && F.cls !== c.k ? 'dim' : ''}" data-k="${c.k}" data-n="${c.n}" data-l="${c.label}">
+        <path d="${arcPath(cx, cy, r0, r1, a0, a1)}" fill="${c.hex}" ${F.cls === c.k ? 'stroke="#eefff6" stroke-width="1.6"' : ''}/>
+        ${big ? `<text class="donut-lbl" x="${(cx + lr * Math.cos(mid)).toFixed(1)}" y="${(cy + lr * Math.sin(mid) + 4).toFixed(1)}" text-anchor="middle">${fmt(c.n)}</text>` : ''}
+      </g>`;
+    }
+    a += sweep;
+  });
+  document.getElementById('donutWrap').innerHTML = `
+    <svg viewBox="0 0 300 240" preserveAspectRatio="xMidYMid meet">
+      <circle cx="${cx}" cy="${cy}" r="${(r0 + r1) / 2}" fill="none" stroke="rgba(146,255,205,0.05)" stroke-width="${r1 - r0}"/>
+      ${segs}
+      <text class="donut-center-val" x="${cx}" y="${cy + 2}" text-anchor="middle" id="donutCenter">${total >= 1000 ? (total / 1000).toFixed(1) + 'K' : fmt(total)}</text>
+      <text class="donut-center-cap" x="${cx}" y="${cy + 24}" text-anchor="middle">مخالفة</text>
+    </svg>`;
+  document.getElementById('donutLegend').innerHTML = counts.map(c => `
+    <span class="lg-item ${F.cls === c.k ? 'sel' : ''}" data-k="${c.k}">${shapeSvg(c.k, c.hex)}${c.label} <span class="val num">${fmt(c.n)}</span></span>`).join('');
+  const toggle = k => { F.cls = (F.cls === k) ? '' : k; applyFilters(); };
+  document.querySelectorAll('.donut-seg').forEach(s => {
+    s.addEventListener('click', () => toggle(s.dataset.k));
+    s.addEventListener('mousemove', ev => showTip(`<b>خطورة ${s.dataset.l}</b><div class="trow"><span>المخالفات</span><b class="num">${fmt(+s.dataset.n)}</b></div><div class="trow"><span>النسبة</span><b class="num">${(+s.dataset.n / (total || 1) * 100).toFixed(1)}%</b></div>`, ev));
+    s.addEventListener('mouseleave', hideTip);
+  });
+  document.querySelectorAll('#donutLegend .lg-item').forEach(s => s.addEventListener('click', () => toggle(s.dataset.k)));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  GAUGE
+ * ══════════════════════════════════════════════════════════════════ */
+let gaugeBuilt = false;
+function renderGauge(rs) {
+  const drv = new Map();
+  rs.forEach(r => drv.set(r.drv.id, r.drv.score));
+  const scores = [...drv.values()];
+  const mean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+
+  const cx = 160, cy = 150, R = 108, TH = 22;
+  const A0 = -Math.PI * 1.08, A1 = Math.PI * 0.08; /* 208° sweep */
+  const toA = v => A0 + v * (A1 - A0);
+  const zones = [[0, 0.4, '#0ca30c', 'منخفض'], [0.4, 0.6, '#fab219', 'متوسط'], [0.6, 0.8, '#ec835a', 'مرتفع'], [0.8, 1, '#d03b3b', 'حرج']];
+
+  if (!gaugeBuilt) {
+    gaugeBuilt = true;
+    const zg = 0.012;
+    let zonesSvg = '';
+    zones.forEach(([v0, v1, clr, lbl]) => {
+      const a0 = toA(v0) + zg, a1 = toA(v1) - zg;
+      zonesSvg += `<path d="${arcPath(cx, cy, R - TH, R, a0, a1)}" fill="${clr}" opacity="0.82"/>`;
+      const mid = (a0 + a1) / 2, lr = R + 14;
+      zonesSvg += `<text class="gauge-zone-lbl" x="${(cx + lr * Math.cos(mid)).toFixed(1)}" y="${(cy + lr * Math.sin(mid) + 3).toFixed(1)}" text-anchor="middle">${lbl}</text>`;
+    });
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(v => {
+      const aa = toA(v), r2 = R - TH - 7;
+      return `<text class="gauge-tick" x="${(cx + (r2 - 8) * Math.cos(aa)).toFixed(1)}" y="${(cy + (r2 - 8) * Math.sin(aa) + 4).toFixed(1)}" text-anchor="middle">${v}</text>
+              <line x1="${(cx + r2 * Math.cos(aa)).toFixed(1)}" y1="${(cy + r2 * Math.sin(aa)).toFixed(1)}" x2="${(cx + (R - TH - 2) * Math.cos(aa)).toFixed(1)}" y2="${(cy + (R - TH - 2) * Math.sin(aa)).toFixed(1)}" stroke="rgba(146,255,205,0.3)" stroke-width="1.4"/>`;
+    }).join('');
+    document.getElementById('gaugeWrap').innerHTML = `
+      <svg viewBox="0 0 320 210" preserveAspectRatio="xMidYMid meet">
+        <defs><filter id="nGlow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#eefff6" flood-opacity="0.45"/></filter></defs>
+        ${zonesSvg}${ticks}
+        <g id="needleG" class="gauge-needle-g" style="transform-origin:${cx}px ${cy}px;">
+          <path d="M ${cx - 5} ${cy} L ${cx} ${cy - R + TH + 12} L ${cx + 5} ${cy} Z" fill="#eefff6" filter="url(#nGlow)"/>
+        </g>
+        <circle cx="${cx}" cy="${cy}" r="9" fill="#0a1a12" stroke="#eefff6" stroke-width="2.5"/>
+        <text class="gauge-val" x="${cx}" y="${cy + 52}" text-anchor="middle" id="gaugeVal">0.00</text>
+        <text class="gauge-cap" x="${cx}" y="${cy + 72}" text-anchor="middle">من أصل 1.0</text>
+      </svg>`;
+  }
+  /* needle: 0 = pointing along A0. transform rotate in deg relative to vertical(-90°) */
+  const deg = (toA(Math.max(0, Math.min(1, mean))) + Math.PI / 2) * 180 / Math.PI;
+  document.getElementById('needleG').style.transform = `rotate(${deg.toFixed(1)}deg)`;
+  animNum('gaugeVal', mean, v => v.toFixed(2));
+  const zone = zones.find(z => mean >= z[0] && mean <= z[1]) || zones[0];
+  const badge = document.getElementById('gaugeBadge');
+  badge.style.color = zone[2]; badge.style.borderColor = zone[2] + '66'; badge.style.background = zone[2] + '14';
+  badge.innerHTML = `${shapeSvg(zone[3] === 'منخفض' ? 'low' : zone[3] === 'متوسط' ? 'mod' : zone[3] === 'مرتفع' ? 'high' : 'crit', zone[2])} خطورة ${zone[3] === 'منخفض' ? 'منخفضة' : zone[3] === 'متوسط' ? 'متوسطة' : zone[3] === 'مرتفع' ? 'مرتفعة' : 'حرجة'}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  SANKEY — institutes (right) → risk classes (left)
+ * ══════════════════════════════════════════════════════════════════ */
+function renderSankey(rs) {
+  const drvSeen = new Map();
+  rs.forEach(r => drvSeen.set(r.drv.id, r.drv));
+  const matrix = new Map(); /* inst → {cls → n} */
+  INSTITUTES.forEach(([i]) => matrix.set(i, { low: 0, mod: 0, high: 0, crit: 0, total: 0 }));
+  drvSeen.forEach(d => { const m = matrix.get(d.inst); m[d.cls]++; m.total++; });
+
+  const W = 560, H = 305, colW = 13, padT = 26, padB = 8;
+  const instX = 402, clsX = 136; /* institutes right, classes left */
+  const SHORT = { 'معهد الإمارات للسياقة': 'معهد الإمارات', 'مدرسة دبي لتعليم القيادة': 'مدرسة دبي', 'بلحصا لتعليم القيادة': 'بلحصا', 'جلاداري لقيادة السيارات': 'جلاداري', 'الأهلي للسياقة': 'الأهلي', 'درايف دبي': 'درايف دبي', 'معاهد أخرى': 'معاهد أخرى' };
+  const usable = H - padT - padB;
+  const totalDrv = Math.max(1, drvSeen.size);
+  const instList = [...matrix.entries()].filter(([, m]) => m.total > 0).sort((a, b) => b[1].total - a[1].total);
+  const clsTotals = { low: 0, mod: 0, high: 0, crit: 0 };
+  drvSeen.forEach(d => clsTotals[d.cls]++);
+
+  const gapI = 7, gapC = 9;
+  const scale = (usable - gapI * Math.max(0, instList.length - 1)) / totalDrv;
+  const scaleC = (usable - gapC * 3) / totalDrv;
+
+  let y = padT;
+  const instPos = new Map();
+  instList.forEach(([name, m]) => { instPos.set(name, { y: y, h: Math.max(2.5, m.total * scale), m: m }); y += Math.max(2.5, m.total * scale) + gapI; });
+  y = padT;
+  const clsPos = new Map();
+  CLASSES.forEach(c => { const n = clsTotals[c.k]; if (!n) return; clsPos.set(c.k, { y: y, h: Math.max(2.5, n * scaleC), n: n, c: c }); y += Math.max(2.5, n * scaleC) + gapC; });
+
+  /* links */
+  const instOff = new Map(instList.map(([n]) => [n, 0]));
+  const clsOff = { low: 0, mod: 0, high: 0, crit: 0 };
+  let links = '';
+  CLASSES.forEach(c => {
+    instList.forEach(([iname, m]) => {
+      const v = m[c.k];
+      if (!v) return;
+      const ip = instPos.get(iname), cp = clsPos.get(c.k);
+      const h1 = v * scale, h2 = v * scaleC;
+      const yR = ip.y + instOff.get(iname), yL = cp.y + clsOff[c.k];
+      instOff.set(iname, instOff.get(iname) + h1);
+      clsOff[c.k] += h2;
+      const x1 = instX - 2, x2 = clsX + colW + 2;
+      const mx = (x1 + x2) / 2;
+      links += `<path class="sk-link" data-i="${iname}" data-k="${c.k}" data-v="${v}" data-l="${c.label}"
+        d="M ${x1} ${yR.toFixed(1)} C ${mx} ${yR.toFixed(1)} ${mx} ${yL.toFixed(1)} ${x2} ${yL.toFixed(1)}
+           L ${x2} ${(yL + h2).toFixed(1)} C ${mx} ${(yL + h2).toFixed(1)} ${mx} ${(yR + h1).toFixed(1)} ${x1} ${(yR + h1).toFixed(1)} Z"
+        fill="${c.hex}" opacity="0.38"/>`;
+    });
+  });
+
+  let nodes = '';
+  instList.forEach(([name, m]) => {
+    const p = instPos.get(name);
+    const two = p.h > 20;
+    nodes += `<rect x="${instX}" y="${p.y.toFixed(1)}" width="${colW}" height="${p.h.toFixed(1)}" rx="3" fill="#27a563" opacity="0.92"/>
+      <text class="sk-node-label" x="${instX + colW + 8}" y="${(p.y + p.h / 2 + (two ? -4 : 1)).toFixed(1)}" text-anchor="start" dominant-baseline="middle">${SHORT[name] || name}</text>
+      <text class="sk-node-count" x="${instX + colW + 8}" y="${(p.y + p.h / 2 + (two ? 9 : 13)).toFixed(1)}" text-anchor="start" dominant-baseline="middle">${fmt(m.total)} سائق</text>`;
+  });
+  CLASSES.forEach(c => {
+    const p = clsPos.get(c.k);
+    if (!p) return;
+    nodes += `<rect x="${clsX}" y="${p.y.toFixed(1)}" width="${colW}" height="${p.h.toFixed(1)}" rx="3" fill="${c.hex}"/>
+      <text class="sk-node-label" x="${clsX - 8}" y="${(p.y + p.h / 2 - 4).toFixed(1)}" text-anchor="end" dominant-baseline="middle">${c.label}</text>
+      <text class="sk-node-count" x="${clsX - 8}" y="${(p.y + p.h / 2 + 9).toFixed(1)}" text-anchor="end" dominant-baseline="middle">${fmt(p.n)}</text>`;
+  });
+
+  document.getElementById('sankeyWrap').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="direction:ltr">
+      <text class="sk-col-title" x="${instX + colW + 40}" y="14" text-anchor="middle">اسم معهد السياقة</text>
+      <text class="sk-col-title" x="${clsX - 40}" y="14" text-anchor="middle">فئة خطورة السائق</text>
+      ${links}${nodes}
+    </svg>`;
+
+  const allLinks = document.querySelectorAll('.sk-link');
+  allLinks.forEach(l => {
+    l.addEventListener('mousemove', ev => {
+      allLinks.forEach(o => { if (o !== l) o.classList.add('dim'); });
+      l.setAttribute('opacity', '0.75');
+      showTip(`<b>${l.dataset.i}</b><div class="trow"><span>فئة ${l.dataset.l}</span><b class="num">${fmt(+l.dataset.v)} سائق</b></div>`, ev);
+    });
+    l.addEventListener('mouseleave', () => { allLinks.forEach(o => o.classList.remove('dim')); l.setAttribute('opacity', '0.30'); hideTip(); });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ *  ORCHESTRATION
+ * ══════════════════════════════════════════════════════════════════ */
+function applyFilters() {
+  const rs = filtered();
+  renderKPIs(rs);
+  renderVioList(rs);
+  renderMap(rs);
+  renderAI(rs);
+  renderDonut(rs);
+  renderGauge(rs);
+  renderSankey(rs);
+  /* rail state */
+  const n = activeCount();
+  document.getElementById('clearBtn').classList.toggle('show', n > 0);
+  document.getElementById('clearCnt').textContent = n;
+  ['selNat', 'selPlate', 'selText', 'selVeh'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.toggle('on', !!el.value);
+  });
+  document.getElementById('mapSub').textContent = F.emirate ? 'مُصفّى: ' + F.emirate : 'موقع تسجيل المخالفة';
+}
+
+/* filter wiring */
+function fillSelect(id, list) {
+  const el = document.getElementById(id);
+  list.forEach(([v]) => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); });
+}
+fillSelect('selNat', NATS); fillSelect('selPlate', PLATES); fillSelect('selText', TEXTS.map(t => [t[0]])); fillSelect('selVeh', VEHICLES);
+document.getElementById('selNat').addEventListener('change', e => { F.nat = e.target.value; applyFilters(); });
+document.getElementById('selPlate').addEventListener('change', e => { F.plate = e.target.value; applyFilters(); });
+document.getElementById('selText').addEventListener('change', e => { F.text = e.target.value; applyFilters(); });
+document.getElementById('selVeh').addEventListener('change', e => { F.veh = e.target.value; applyFilters(); });
+document.querySelectorAll('#segRes button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#segRes button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); F.res = b.dataset.v; applyFilters();
+}));
+document.querySelectorAll('#topTabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#topTabs button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); topN = +b.dataset.n; renderVioList(filtered());
+}));
+document.getElementById('clearBtn').addEventListener('click', () => {
+  F.res = 'all'; F.nat = F.plate = F.text = F.veh = F.emirate = F.cls = '';
+  ['selNat', 'selPlate', 'selText', 'selVeh'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('#segRes button').forEach(x => x.classList.toggle('active', x.dataset.v === 'all'));
+  applyFilters();
+});
+document.getElementById('aiBtn').addEventListener('click', () => {
+  const p = document.querySelector('.ai-frame');
+  p.animate([{ boxShadow: '0 0 0 0 rgba(63,214,133,0.0)' }, { boxShadow: '0 0 3cqw 0.4cqw rgba(63,214,133,0.35)' }, { boxShadow: '0 0 0 0 rgba(63,214,133,0.0)' }], { duration: 1200, easing: 'ease-in-out' });
+});
+
+/* clock */
+function tick() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('clockDate').textContent = now.toLocaleDateString('ar-AE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  document.getElementById('footTime').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+tick(); setInterval(tick, 15000);
+
+renderForecast();
+applyFilters();
+</script>
+</body>
+</html>

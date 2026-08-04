@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Donut Chart — SAS VA Data-Driven Content</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  /* ════════════════════════════════════════════════════════════════
+   *  SAS VA DDC MESSAGING SHIM
+   *  Self-contained equivalent of util/messagingUtil.js so this file
+   *  drops into VA as a single .html with no sibling JS dependencies.
+   * ════════════════════════════════════════════════════════════════ */
+  (function () {
+    if (window.va && window.va.messagingUtil) return;
+    window.va = window.va || {};
+    var _cb = null;
+    window.va.messagingUtil = {
+      setOnDataReceivedCallback: function (fn) {
+        _cb = fn;
+        window.addEventListener('message', function (ev) {
+          if (ev && ev.data && typeof ev.data === 'object' && _cb) _cb(ev.data);
+        });
+      },
+      postMessage: function (msg) {
+        if (window.parent) window.parent.postMessage(msg, '*');
+      },
+      postSelectionMessage: function (resultName, rows) {
+        rows = (rows || []).map(function (r) { return (typeof r === 'object') ? r : { row: r }; });
+        this.postMessage({ resultName: resultName, selections: rows });
+      },
+      postInstructionalMessage: function (resultName, txt) {
+        this.postMessage({ resultName: resultName, message: txt });
+      }
+    };
+  })();
+</script>
+<script>
+  // Theme: honor ?theme=dark, else the shared dashboard preference
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search).get('theme');
+      var t = p || localStorage.getItem('rta-dashboard-theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --pearl-1: #f7f3ec;
+    --pearl-3: #e8edf3;
+    --glass:        rgba(255, 254, 251, 0.62);
+    --hairline:     rgba(15, 23, 42, 0.07);
+    --ink-1: #0a1628;
+    --ink-3: #475569;
+    --ink-4: #64748b;
+    --ink-5: #94a3b8;
+    --rta-red: #b91c2c;
+    --gold:    #b8852e;
+  }
+  html[data-theme="dark"] {
+    --pearl-1: #0a1220;
+    --pearl-3: #0d1830;
+    --glass:        rgba(16, 28, 50, 0.62);
+    --hairline:     rgba(255, 255, 255, 0.08);
+    --ink-1: #f4f7fb;
+    --ink-3: rgba(255, 255, 255, 0.72);
+    --ink-4: rgba(255, 255, 255, 0.55);
+    --ink-5: rgba(255, 255, 255, 0.40);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background:
+      radial-gradient(circle at 20% 0%, var(--pearl-3) 0%, transparent 55%),
+      var(--pearl-1);
+    color: var(--ink-1);
+    overflow: hidden;
+  }
+
+  .stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(12px, 2.4vh, 28px) clamp(16px, 2.6vw, 36px);
+  }
+
+  .chart-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: clamp(8px, 1.6vh, 16px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .chart-eyebrow {
+    width: 100%;
+    font-size: clamp(9px, 1.1vh, 11px);
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .chart-title {
+    font-size: clamp(16px, 2.8vh, 26px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .chart-sub {
+    font-size: clamp(11px, 1.6vh, 14px);
+    font-weight: 600;
+    color: var(--ink-4);
+    font-feature-settings: 'tnum' 1;
+  }
+  .sample-badge {
+    margin-left: auto;
+    font-size: clamp(9px, 1.2vh, 11px);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rta-red);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 3px 10px;
+    opacity: 0.85;
+  }
+  .sample-badge.hidden { display: none; }
+
+  .chart-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .donut-mount {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-mount svg { width: 100%; height: 100%; }
+
+  /* Center overlay — total in the donut hole */
+  .donut-center {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .donut-center-val {
+    font-size: clamp(22px, 7vh, 54px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-feature-settings: 'tnum' 1;
+    line-height: 1.05;
+  }
+  .donut-center-lbl {
+    font-size: clamp(9px, 1.5vh, 12px);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+    margin-top: 4px;
+  }
+
+  .empty-note {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-5);
+    text-align: center;
+    padding: 0 10%;
+  }
+
+  /* ─── Legend ─── */
+  .donut-legend {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 10px;
+    padding-top: clamp(6px, 1.4vh, 14px);
+  }
+  .legend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-size: clamp(10px, 1.5vh, 13px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    user-select: none;
+  }
+  .legend-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10); }
+  .legend-chip.dimmed { opacity: 0.35; }
+  .legend-chip.active { box-shadow: 0 0 0 1.5px currentColor, 0 4px 12px rgba(15, 23, 42, 0.12); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+  .legend-val { color: var(--ink-3); font-feature-settings: 'tnum' 1; }
+  .legend-pct { color: var(--ink-5); font-weight: 600; font-feature-settings: 'tnum' 1; }
+
+  /* ─── 3D donut segment animation (same as performance.html) ─── */
+  .d3d-top { transition: filter 0.2s ease; cursor: pointer; }
+  .d3d-segment:hover .d3d-top { filter: brightness(1.1) drop-shadow(0 0 6px currentColor); }
+  .d3d-segment {
+    opacity: 0;
+    animation: donut-segment-in 0.75s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+  }
+  @keyframes donut-segment-in {
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <header class="chart-head">
+      <div class="chart-eyebrow">Data-Driven Content · 3D Donut</div>
+      <h1 class="chart-title" id="chart-title">3D Donut Chart</h1>
+      <div class="chart-sub" id="chart-sub"></div>
+      <span class="sample-badge" id="sample-badge">Sample data · awaiting SAS VA</span>
+    </header>
+    <div class="chart-body">
+      <div class="donut-mount" id="donut-mount">
+        <div class="donut-center" id="donut-center">
+          <div class="donut-center-val" id="donut-center-val">—</div>
+          <div class="donut-center-lbl" id="donut-center-lbl"></div>
+        </div>
+      </div>
+      <div class="donut-legend" id="donut-legend"></div>
+    </div>
+  </main>
+
+<script>
+  'use strict';
+
+  /* ════════════════════════════════════════════════════════════════
+   *  STATE
+   *  CHART_DATA — [{ label, key, value, color, rows }] aggregated by
+   *  category. rows holds original VA row indices so segment clicks
+   *  can post a selection back to the report (brushing).
+   * ════════════════════════════════════════════════════════════════ */
+  let CHART_DATA    = [];
+  let CAT_LABEL     = 'Category';
+  let MEASURE_LABEL = 'Value';
+  let ACTIVE_KEY    = '';
+  let RESULT_NAME   = null;
+  let IS_SAMPLE     = true;
+
+  const MAX_SEGMENTS = 9;   // beyond this, smallest categories fold into "Other"
+
+  // Color ramps [light → mid → deep → deepest] — dashboard palette family
+  const RAMPS = [
+    ['#b5dfff', '#5cc6e8', '#2d80a8', '#1a4d66'],   // teal
+    ['#ffe1a8', '#ebbf6a', '#b8862e', '#7a571a'],   // honey gold
+    ['#a8f5b8', '#6ddc8a', '#3a8e5a', '#1f5a36'],   // emerald
+    ['#ffb8b8', '#f08585', '#b03c3c', '#6f1f1f'],   // crimson
+    ['#d8c5f5', '#a98ae0', '#6d4fa8', '#3f2a6b'],   // violet
+    ['#ffd0a8', '#fb923c', '#b06024', '#6e3a12'],   // amber
+    ['#c2ecec', '#72cfc9', '#2d8f88', '#15534e'],   // sea
+    ['#f5c0dc', '#e07ab2', '#a8407a', '#651f47'],   // rose
+    ['#c9d4e4', '#8da3c0', '#52688a', '#2c3a52'],   // slate
+    ['#f7e8a8', '#e3cb5d', '#a8902a', '#6b5a14']    // citrine
+  ];
+
+  /* ════════════════════════════════════════════════════════════════
+   *  SAS VA DDC DATA HANDLER
+   *  Works with ANY two columns assigned in the Roles tab:
+   *  one category (string/date) + one measure (numeric). Role order
+   *  doesn't matter — the measure is detected by column type. Rows
+   *  are aggregated (summed) per category. If no numeric column is
+   *  assigned, categories are counted instead.
+   * ════════════════════════════════════════════════════════════════ */
+  function onVADataReceived(msg) {
+    if (!msg || !Array.isArray(msg.data) || !Array.isArray(msg.columns)) return;
+    RESULT_NAME = msg.resultName;
+
+    if (msg.columns.length < 1) return;
+
+    let measureIdx = msg.columns.findIndex(c => c && c.type === 'number');
+    let catIdx = msg.columns.findIndex((c, i) => i !== measureIdx);
+    if (catIdx === -1) catIdx = 0;   // single-column fallback
+
+    const colName = i => (msg.columns[i] && (msg.columns[i].label || msg.columns[i].name)) || '';
+    CAT_LABEL = colName(catIdx) || 'Category';
+    MEASURE_LABEL = measureIdx !== -1 ? (colName(measureIdx) || 'Value') : 'Count';
+
+    // Aggregate measure by category (sum), tracking source row indices
+    const agg = new Map();
+    msg.data.forEach((row, ri) => {
+      const key = row[catIdx] == null || row[catIdx] === '' ? '(missing)' : String(row[catIdx]);
+      let v = 1;
+      if (measureIdx !== -1) {
+        v = parseFloat(row[measureIdx]);
+        if (isNaN(v)) v = 0;
+      }
+      if (!agg.has(key)) agg.set(key, { label: key, key: key, value: 0, rows: [] });
+      const e = agg.get(key);
+      e.value += v;
+      e.rows.push(ri);
+    });
+
+    let items = [...agg.values()].sort((a, b) => b.value - a.value);
+
+    // Fold the tail into "Other" so the ring stays readable
+    if (items.length > MAX_SEGMENTS) {
+      const head = items.slice(0, MAX_SEGMENTS - 1);
+      const tail = items.slice(MAX_SEGMENTS - 1);
+      head.push({
+        label: 'Other',
+        key: '__other__',
+        value: tail.reduce((s, d) => s + d.value, 0),
+        rows: tail.flatMap(d => d.rows)
+      });
+      items = head;
+    }
+
+    items.forEach((d, i) => { d.color = RAMPS[i % RAMPS.length]; });
+
+    CHART_DATA = items;
+    IS_SAMPLE = false;
+    ACTIVE_KEY = '';
+    document.getElementById('sample-badge').classList.add('hidden');
+    render();
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  SAMPLE DATA — shown when opened outside SAS VA, replaced the
+   *  moment the first VA message arrives.
+   * ════════════════════════════════════════════════════════════════ */
+  function loadSampleData() {
+    CAT_LABEL = 'Driver Category';
+    MEASURE_LABEL = 'Violations';
+    CHART_DATA = [
+      { label: 'Taxi',       key: 'Taxi',       value: 1840, rows: [] },
+      { label: 'Public Bus', key: 'Public Bus', value: 1265, rows: [] },
+      { label: 'Limousine',  key: 'Limousine',  value: 940,  rows: [] },
+      { label: 'School Bus', key: 'School Bus', value: 615,  rows: [] },
+      { label: 'Marine',     key: 'Marine',     value: 410,  rows: [] },
+      { label: 'Hourly',     key: 'Hourly',     value: 285,  rows: [] }
+    ];
+    CHART_DATA.forEach((d, i) => { d.color = RAMPS[i % RAMPS.length]; });
+    render();
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  HELPERS
+   * ════════════════════════════════════════════════════════════════ */
+  function fmt(v) {
+    const a = Math.abs(v);
+    if (a >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (a >= 1e3) return (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+    if (a > 0 && a < 10 && v !== Math.round(v)) return v.toFixed(1);
+    return Math.round(v).toLocaleString();
+  }
+
+  function onSegmentClick(item, isActive) {
+    ACTIVE_KEY = isActive ? '' : item.key;
+    if (RESULT_NAME) {
+      va.messagingUtil.postSelectionMessage(RESULT_NAME, ACTIVE_KEY ? item.rows : []);
+    }
+    render();
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  3D DONUT RENDERER — full-stage version of render3DDonut from
+   *  performance.html (top face, side walls, sheen, shadow)
+   * ════════════════════════════════════════════════════════════════ */
+  function render3DDonut(mountEl, data, opts = {}) {
+    const VB = opts.viewBox || { w: 200, h: 140 };
+    const cx = opts.cx || 100, cy = opts.cy || 65;
+    const rOuter = opts.rOuter || 58;
+    const rInner = opts.rInner || 36;
+    const tilt = opts.tilt || 0.42;
+    const depth = opts.depth || 13;
+    const startAngle = -Math.PI / 2;
+    const activeKey = opts.activeKey || null;
+    const onClick = opts.onClick || null;
+
+    // Filter out zero / near-zero segments so SVG arcs never degenerate
+    const positive = data.filter(d => d.value > 0.0001);
+    const total = positive.reduce((s, d) => s + d.value, 0);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${VB.w} ${VB.h}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    function pt(angle, r, yOffset = 0) {
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle) * tilt + yOffset];
+    }
+
+    const centerOverlay = mountEl.querySelector('.donut-center');
+    mountEl.querySelectorAll('svg, .empty-note').forEach(el => el.remove());
+
+    // EMPTY STATE — render a faint placeholder ring (no data)
+    if (positive.length === 0 || total <= 0) {
+      const ringPath = `M ${cx - rOuter} ${cy}
+          A ${rOuter} ${rOuter * tilt} 0 1 1 ${cx + rOuter} ${cy}
+          A ${rOuter} ${rOuter * tilt} 0 1 1 ${cx - rOuter} ${cy}
+          M ${cx - rInner} ${cy}
+          A ${rInner} ${rInner * tilt} 0 1 0 ${cx + rInner} ${cy}
+          A ${rInner} ${rInner * tilt} 0 1 0 ${cx - rInner} ${cy} Z`;
+      const ring = document.createElementNS(svgNS, 'path');
+      ring.setAttribute('d', ringPath);
+      ring.setAttribute('fill', 'rgba(15, 23, 42, 0.06)');
+      ring.setAttribute('fill-rule', 'evenodd');
+      svg.appendChild(ring);
+      mountEl.insertBefore(svg, centerOverlay);
+      return;
+    }
+
+    const defs = document.createElementNS(svgNS, 'defs');
+    defs.innerHTML = `
+      <radialGradient id="donut-shadow-grad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0.65"/>
+        <stop offset="60%" stop-color="#000000" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+      </radialGradient>
+      ${positive.map((d, i) => `
+        <radialGradient id="donut-top-grad-${i}" cx="35%" cy="25%" r="80%">
+          <stop offset="0%" stop-color="${d.color[0]}"/>
+          <stop offset="55%" stop-color="${d.color[1]}"/>
+          <stop offset="100%" stop-color="${d.color[2]}"/>
+        </radialGradient>
+        <linearGradient id="donut-side-grad-${i}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="${d.color[1]}"/>
+          <stop offset="55%" stop-color="${d.color[2]}"/>
+          <stop offset="100%" stop-color="${d.color[3]}"/>
+        </linearGradient>
+      `).join('')}
+      <linearGradient id="donut-sheen" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.75"/>
+        <stop offset="50%" stop-color="#ffffff" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+    `;
+    svg.appendChild(defs);
+
+    const shadow = document.createElementNS(svgNS, 'ellipse');
+    shadow.setAttribute('cx', cx);
+    shadow.setAttribute('cy', cy + depth + 6);
+    shadow.setAttribute('rx', rOuter * 0.92);
+    shadow.setAttribute('ry', rOuter * tilt * 0.55);
+    shadow.setAttribute('fill', 'url(#donut-shadow-grad)');
+    shadow.setAttribute('opacity', '0.5');
+    svg.appendChild(shadow);
+
+    // Build segment angle ranges. If a single segment takes the full ring,
+    // its span is clamped just shy of 2π so the SVG arc doesn't collapse.
+    let acc = startAngle;
+    const segments = positive.map(d => {
+      const start = acc;
+      let span = (d.value / total) * Math.PI * 2;
+      if (positive.length === 1) span = Math.PI * 2 - 0.0001;
+      const end = start + span;
+      acc = end;
+      return { ...d, start, end, midAngle: (start + end) / 2 };
+    });
+
+    const sorted = [...segments].map((s, i) => ({ ...s, idx: i }))
+      .sort((a, b) => Math.sin(a.midAngle) - Math.sin(b.midAngle));
+    sorted.forEach(seg => {
+      const d = buildSideWallPath(seg.start, seg.end, rOuter, depth);
+      if (d) {
+        const wall = document.createElementNS(svgNS, 'path');
+        wall.setAttribute('d', d);
+        wall.setAttribute('fill', `url(#donut-side-grad-${seg.idx})`);
+        wall.setAttribute('stroke', seg.color[3]);
+        wall.setAttribute('stroke-width', '0.25');
+        wall.setAttribute('stroke-opacity', '0.5');
+        svg.appendChild(wall);
+      }
+    });
+
+    const inner = document.createElementNS(svgNS, 'ellipse');
+    inner.setAttribute('cx', cx);
+    inner.setAttribute('cy', cy + 1.5);
+    inner.setAttribute('rx', rInner);
+    inner.setAttribute('ry', rInner * tilt);
+    inner.setAttribute('fill', 'none');
+    inner.setAttribute('stroke', '#000000');
+    inner.setAttribute('stroke-width', '3');
+    inner.setAttribute('stroke-opacity', '0.35');
+    inner.setAttribute('filter', 'blur(0.8px)');
+    svg.appendChild(inner);
+
+    segments.forEach((seg, i) => {
+      const g = document.createElementNS(svgNS, 'g');
+      g.setAttribute('class', 'd3d-segment');
+      g.style.animationDelay = `${0.15 + i * 0.13}s`;
+      g.style.color = seg.color[1];
+
+      // Active filter feedback: dim non-active segments
+      const isDimmed = activeKey && seg.key && seg.key !== activeKey;
+      const isActive = activeKey && seg.key === activeKey;
+      if (isDimmed) g.style.opacity = '0.35';
+      if (isActive) g.style.filter = 'brightness(1.15) saturate(1.15) drop-shadow(0 0 6px currentColor)';
+
+      const top = document.createElementNS(svgNS, 'path');
+      if (positive.length === 1) {
+        top.setAttribute('d', buildFullRingTopPath(rOuter, rInner));
+        top.setAttribute('fill-rule', 'evenodd');
+      } else {
+        top.setAttribute('d', buildTopFacePath(seg.start, seg.end, rOuter, rInner));
+      }
+      top.setAttribute('fill', `url(#donut-top-grad-${i})`);
+      top.setAttribute('class', 'd3d-top');
+      top.setAttribute('stroke', seg.color[2]);
+      top.setAttribute('stroke-width', '0.3');
+      top.setAttribute('stroke-opacity', '0.5');
+      g.appendChild(top);
+
+      const sheen = buildSheenPath(seg.start, seg.end, rOuter, rInner);
+      if (sheen) {
+        const s = document.createElementNS(svgNS, 'path');
+        s.setAttribute('d', sheen);
+        s.setAttribute('fill', 'url(#donut-sheen)');
+        s.setAttribute('opacity', '0.6');
+        s.style.pointerEvents = 'none';
+        g.appendChild(s);
+      }
+
+      if (onClick && seg.key) {
+        g.style.cursor = 'pointer';
+        g.addEventListener('click', () => onClick(seg, isActive));
+      }
+
+      const title = document.createElementNS(svgNS, 'title');
+      title.textContent = `${seg.label} — ${seg.value.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${((seg.value / total) * 100).toFixed(1)}%)`;
+      g.appendChild(title);
+
+      svg.appendChild(g);
+    });
+
+    function buildFullRingTopPath(rO, rI) {
+      const oL = pt(Math.PI, rO), oR = pt(0, rO);
+      const iL = pt(Math.PI, rI), iR = pt(0, rI);
+      return `M ${oL[0]} ${oL[1]}
+              A ${rO} ${rO * tilt} 0 1 1 ${oR[0]} ${oR[1]}
+              A ${rO} ${rO * tilt} 0 1 1 ${oL[0]} ${oL[1]}
+              M ${iL[0]} ${iL[1]}
+              A ${rI} ${rI * tilt} 0 1 0 ${iR[0]} ${iR[1]}
+              A ${rI} ${rI * tilt} 0 1 0 ${iL[0]} ${iL[1]} Z`;
+    }
+    function buildTopFacePath(a1, a2, rO, rI) {
+      const [p1x, p1y] = pt(a1, rO);
+      const [p2x, p2y] = pt(a2, rO);
+      const [p3x, p3y] = pt(a2, rI);
+      const [p4x, p4y] = pt(a1, rI);
+      const la = (a2 - a1) > Math.PI ? 1 : 0;
+      return `M ${p1x} ${p1y} A ${rO} ${rO * tilt} 0 ${la} 1 ${p2x} ${p2y} L ${p3x} ${p3y} A ${rI} ${rI * tilt} 0 ${la} 0 ${p4x} ${p4y} Z`;
+    }
+    function buildSideWallPath(a1, a2, rO, d) {
+      let s = Math.max(a1, 0), e = Math.min(a2, Math.PI);
+      if (s >= e) return null;
+      const [p1x, p1y] = pt(s, rO);
+      const [p2x, p2y] = pt(e, rO);
+      const [p3x, p3y] = pt(e, rO, d);
+      const [p4x, p4y] = pt(s, rO, d);
+      const la = (e - s) > Math.PI ? 1 : 0;
+      return `M ${p1x} ${p1y} A ${rO} ${rO * tilt} 0 ${la} 1 ${p2x} ${p2y} L ${p3x} ${p3y} A ${rO} ${rO * tilt} 0 ${la} 0 ${p4x} ${p4y} Z`;
+    }
+    function buildSheenPath(a1, a2, rO, rI) {
+      let s = Math.max(a1, -Math.PI), e = Math.min(a2, 0);
+      if (s >= e) return null;
+      const rIn2 = rO - 4;
+      const [p1x, p1y] = pt(s, rO);
+      const [p2x, p2y] = pt(e, rO);
+      const [p3x, p3y] = pt(e, rIn2);
+      const [p4x, p4y] = pt(s, rIn2);
+      const la = (e - s) > Math.PI ? 1 : 0;
+      return `M ${p1x} ${p1y} A ${rO} ${rO * tilt} 0 ${la} 1 ${p2x} ${p2y} L ${p3x} ${p3y} A ${rIn2} ${rIn2 * tilt} 0 ${la} 0 ${p4x} ${p4y} Z`;
+    }
+
+    mountEl.insertBefore(svg, centerOverlay);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  PAGE RENDER — title, donut, center total, legend
+   * ════════════════════════════════════════════════════════════════ */
+  function render() {
+    const mount = document.getElementById('donut-mount');
+    const legend = document.getElementById('donut-legend');
+
+    document.getElementById('chart-title').textContent =
+      MEASURE_LABEL + ' by ' + CAT_LABEL;
+
+    const grandTotal = CHART_DATA.reduce((s, d) => s + d.value, 0);
+    document.getElementById('chart-sub').textContent = CHART_DATA.length
+      ? 'Total ' + fmt(grandTotal) + ' · ' + CHART_DATA.length + ' categories'
+      : '';
+
+    document.getElementById('donut-center-val').textContent =
+      CHART_DATA.length ? fmt(grandTotal) : '—';
+    document.getElementById('donut-center-lbl').textContent =
+      CHART_DATA.length ? 'Total ' + MEASURE_LABEL : '';
+
+    render3DDonut(mount, CHART_DATA, {
+      viewBox: { w: 220, h: 145 },
+      cx: 110, cy: 62, rOuter: 88, rInner: 52, tilt: 0.42, depth: 17,
+      activeKey: ACTIVE_KEY,
+      onClick: (seg, isActive) => onSegmentClick(seg, isActive)
+    });
+
+    if (!CHART_DATA.length) {
+      const note = document.createElement('div');
+      note.className = 'empty-note';
+      note.textContent = 'No data — assign one category and one measure in the SAS VA Roles tab.';
+      mount.appendChild(note);
+    }
+
+    // Legend chips — clickable, mirror the segment active/dim state
+    legend.innerHTML = '';
+    CHART_DATA.forEach(d => {
+      const isActive = ACTIVE_KEY && d.key === ACTIVE_KEY;
+      const isDimmed = ACTIVE_KEY && d.key !== ACTIVE_KEY;
+      const pct = grandTotal > 0 ? ((d.value / grandTotal) * 100).toFixed(1) : '0.0';
+      const chip = document.createElement('div');
+      chip.className = 'legend-chip' + (isActive ? ' active' : '') + (isDimmed ? ' dimmed' : '');
+      chip.style.color = d.color[2];
+      chip.innerHTML = `
+        <span class="legend-dot" style="background:${d.color[1]}"></span>
+        <span>${d.label}</span>
+        <span class="legend-val">${fmt(d.value)}</span>
+        <span class="legend-pct">${pct}%</span>
+      `;
+      chip.addEventListener('click', () => onSegmentClick(d, isActive));
+      legend.appendChild(chip);
+    });
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  BOOT
+   * ════════════════════════════════════════════════════════════════ */
+  va.messagingUtil.setOnDataReceivedCallback(onVADataReceived);
+  loadSampleData();
+</script>
+</body>
+</html>

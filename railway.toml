@@ -1,0 +1,15 @@
+# Railway deployment configuration for the RTA Smart Monitoring Assistant.
+# The Dockerfile lives in chatbot/ but builds from the repo root so the
+# CSVs (alerts.csv, violations.csv) are inside the build context.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "chatbot/Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check endpoint
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خلفية اللوحة — شرطة دبي</title>
+<style>
+  /* ════════════════════════════════════════════════════════════════════
+   *  ✦  شرطة دبي · خلفية اللوحة الرئيسية  ✦
+   *  Sleek static backdrop for SAS VA overlay — dark emerald tech.
+   *  Near-black stage · soft green light · thin HUD rings behind centre
+   *  · fine contour lines. No animation, no JS, no external assets.
+   * ════════════════════════════════════════════════════════════════════ */
+  :root {
+    --mint:      #2ee6a8;
+    --mint-soft: rgba(46, 230, 168, 0.55);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+
+  body {
+    /* base: near-black with deep emerald pooling, like the reference heroes */
+    background:
+      /* main light — soft mint-cyan bloom upper centre-right (duotone warm side) */
+      radial-gradient(ellipse 52% 44% at 68% 22%, rgba(38, 195, 158, 0.20) 0%, transparent 65%),
+      /* counter light — lower left, dimmer, deeper emerald */
+      radial-gradient(ellipse 46% 40% at 12% 88%, rgba(28, 150, 100, 0.15) 0%, transparent 62%),
+      /* centre stage glow — barely there, keeps overlaid objects lifted */
+      radial-gradient(ellipse 36% 32% at 50% 52%, rgba(40, 200, 145, 0.09) 0%, transparent 70%),
+      /* floor sheen under the contour lines */
+      radial-gradient(ellipse 60% 18% at 50% 101%, rgba(40, 190, 140, 0.12) 0%, transparent 70%),
+      /* deep vertical grade */
+      linear-gradient(178deg, #122e21 0%, #0a2015 38%, #061510 74%, #040e09 100%);
+  }
+
+  .layer { position: fixed; inset: 0; }
+
+  /* diagonal light shaft from the top-right corner — the "hero" light */
+  .shaft {
+    background: linear-gradient(215deg,
+      rgba(46, 230, 168, 0.10) 0%,
+      rgba(46, 230, 168, 0.035) 22%,
+      transparent 48%);
+  }
+
+  /* svg artwork: rings, ticks, contour lines, dot fields */
+
+  /* silk light ribbons crossing the frame (poster language) */
+  .ribbon { pointer-events: none; }
+  .ribbon.r1 { background: linear-gradient(115deg, transparent 32%, rgba(140,255,205,0.045) 45%, rgba(190,255,225,0.085) 50%, rgba(140,255,205,0.05) 56%, transparent 70%); filter: blur(10px); }
+  .ribbon.r2 { background: linear-gradient(115deg, transparent 40%, rgba(140,255,205,0.03) 49%, rgba(180,250,218,0.055) 52%, rgba(140,255,205,0.03) 55%, transparent 64%); filter: blur(8px); transform: translateY(-12%); }
+  svg.art { width: 100%; height: 100%; display: block; }
+
+  /* vignette + hairline top highlight — the cinematic frame */
+  .grade::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(240, 245, 242, 0.05) 0%, transparent 1.5px),
+      radial-gradient(ellipse 92% 84% at 50% 46%, transparent 58%, rgba(1, 5, 3, 0.62) 100%);
+  }
+  /* film grain — static, whisper-quiet */
+  .grade::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(240, 245, 242, 0.028) 1px, transparent 1px),
+      radial-gradient(circle at 19px 13px, rgba(240, 245, 242, 0.015) 1px, transparent 1px);
+    background-size: 30px 30px, 47px 47px;
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+   *  MOTION — off unless <body class="motion"> (add ?static to freeze).
+   *  Every animation is slow and loops on existing elements only:
+   *  any paused frame equals the approved static design.
+   * ════════════════════════════════════════════════════════════════ */
+  @keyframes m-orbit     { to { transform: rotate(360deg); } }
+  @keyframes m-orbit-rev { to { transform: rotate(-360deg); } }
+  @keyframes m-breathe   { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; } }
+  @keyframes m-halo      { 0%, 100% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.05); opacity: 1; } }
+  @keyframes m-drift     { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(14px); } }
+  @keyframes m-bloom     { 0%, 100% { transform: translateX(0); opacity: 0.85; } 50% { transform: translateX(-46px); opacity: 1; } }
+  @keyframes m-tw        { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+  body.motion .orbit-a,
+  body.motion .orbit-b,
+  body.motion .orbit-c,
+  body.motion .dash-ring,
+  body.motion .halo { transform-box: view-box; transform-origin: 960px 540px; }
+  body.motion .orbit-a   { animation: m-orbit 55s linear infinite; }
+  body.motion .orbit-b   { animation: m-orbit-rev 85s linear infinite; }
+  body.motion .orbit-c   { animation: m-orbit 115s linear infinite; }
+  body.motion .dash-ring { animation: m-orbit-rev 150s linear infinite; }
+  body.motion .halo      { animation: m-halo 14s ease-in-out infinite; }
+  body.motion .corner-sweep { transform-box: view-box; transform-origin: 1905px -60px; animation: m-orbit 95s linear infinite; }
+  body.motion .bloom     { transform-box: view-box; animation: m-bloom 34s ease-in-out infinite; }
+  body.motion .flare-ln  { animation: m-breathe 11s ease-in-out infinite; }
+  body.motion .shaft     { animation: m-breathe 17s ease-in-out infinite; }
+  body.motion .contours  { transform-box: view-box; animation: m-drift 30s ease-in-out infinite; }
+  body.motion .contours.c-high { animation-duration: 40s; animation-direction: reverse; }
+  body.motion .dust circle { animation: m-tw 7s ease-in-out infinite; }
+  body.motion .dust circle:nth-child(2n) { animation-delay: 1.7s; }
+  body.motion .dust circle:nth-child(3n) { animation-delay: 3.2s; }
+  body.motion .dust circle:nth-child(5n) { animation-delay: 4.9s; animation-duration: 9.5s; }
+  body.motion .mosaic { transform-box: view-box; transform-origin: 960px 540px; animation: m-orbit 280s linear infinite; }
+  body.motion .uae-net { animation: m-breathe 22s ease-in-out infinite; }
+  body.motion .bokeh-l circle { animation: m-tw 8s ease-in-out infinite; }
+  body.motion .bokeh-l circle:nth-child(2n) { animation-delay: 2.1s; }
+  body.motion .bokeh-l circle:nth-child(3n) { animation-delay: 4.4s; }
+  body.motion .ribbon.r1 { animation: m-drift 44s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { body.motion * { animation: none !important; } }
+</style>
+</head>
+<body>
+
+  <div class="layer shaft"></div>
+  <div class="layer ribbon r1"></div>
+  <div class="layer ribbon r2"></div>
+
+  <svg class="art layer" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <!-- glow for the bright arc -->
+      <filter id="arcGlow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="7" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0"   stop-color="rgba(46, 230, 168, 0)"/>
+        <stop offset="0.5" stop-color="rgba(46, 230, 168, 0.85)"/>
+        <stop offset="1"   stop-color="rgba(46, 230, 168, 0)"/>
+      </linearGradient>
+      <linearGradient id="arcGrad2" x1="1" y1="1" x2="0" y2="0">
+        <stop offset="0"   stop-color="rgba(46, 230, 168, 0)"/>
+        <stop offset="0.5" stop-color="rgba(46, 230, 168, 0.35)"/>
+        <stop offset="1"   stop-color="rgba(46, 230, 168, 0)"/>
+      </linearGradient>
+      <!-- dot field pattern -->
+      <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+        <circle cx="1.3" cy="1.3" r="1.3" fill="rgba(205, 222, 214, 0.065)"/>
+      </pattern>
+      <radialGradient id="dotFadeTL" cx="0" cy="0" r="1">
+        <stop offset="0"   stop-color="#fff"/>
+        <stop offset="1"   stop-color="#000"/>
+      </radialGradient>
+      <radialGradient id="dotFadeBR" cx="1" cy="1" r="1">
+        <stop offset="0"   stop-color="#fff"/>
+        <stop offset="1"   stop-color="#000"/>
+      </radialGradient>
+      <mask id="dotMaskTL"><rect x="0" y="0" width="640" height="480" fill="url(#dotFadeTL)"/></mask>
+      <mask id="dotMaskBR"><rect x="1280" y="620" width="640" height="460" fill="url(#dotFadeBR)"/></mask>
+      <!-- fade for contour lines: strongest mid-right, gone at edges -->
+      <linearGradient id="lineFade" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="rgba(46, 230, 168, 0)"/>
+        <stop offset="0.35" stop-color="rgba(46, 230, 168, 0.10)"/>
+        <stop offset="0.72" stop-color="rgba(46, 230, 168, 0.13)"/>
+        <stop offset="1"    stop-color="rgba(46, 230, 168, 0)"/>
+      </linearGradient>
+      <!-- smooth centre halo — no hard edges -->
+      <radialGradient id="haloGrad" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0"    stop-color="rgba(46, 230, 168, 0.085)"/>
+        <stop offset="0.45" stop-color="rgba(46, 230, 168, 0.042)"/>
+        <stop offset="0.75" stop-color="rgba(46, 230, 168, 0.013)"/>
+        <stop offset="1"    stop-color="rgba(46, 230, 168, 0)"/>
+      </radialGradient>
+      <!-- glass disc inside the rings -->
+      <radialGradient id="glassGrad" cx="0.38" cy="0.30" r="0.9">
+        <stop offset="0"    stop-color="rgba(180, 255, 224, 0.045)"/>
+        <stop offset="0.55" stop-color="rgba(46, 230, 168, 0.018)"/>
+        <stop offset="1"    stop-color="rgba(46, 230, 168, 0)"/>
+      </radialGradient>
+      <!-- rim light for the main ring: bright top-right, fades away -->
+      <linearGradient id="rimGrad" x1="1" y1="0" x2="0" y2="1">
+        <stop offset="0"    stop-color="rgba(160, 255, 216, 0.55)"/>
+        <stop offset="0.45" stop-color="rgba(46, 230, 168, 0.14)"/>
+        <stop offset="1"    stop-color="rgba(46, 230, 168, 0.02)"/>
+      </linearGradient>
+      <!-- lens-flare horizon line behind the rings -->
+      <linearGradient id="flareGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="rgba(140, 255, 210, 0)"/>
+        <stop offset="0.42" stop-color="rgba(140, 255, 210, 0.10)"/>
+        <stop offset="0.62" stop-color="rgba(190, 255, 230, 0.42)"/>
+        <stop offset="0.80" stop-color="rgba(140, 255, 210, 0.08)"/>
+        <stop offset="1"    stop-color="rgba(140, 255, 210, 0)"/>
+      </linearGradient>
+      <radialGradient id="flareBloom" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0"   stop-color="rgba(150, 255, 215, 0.06)"/>
+        <stop offset="0.5" stop-color="rgba(60, 230, 175, 0.022)"/>
+        <stop offset="1"   stop-color="rgba(60, 230, 175, 0)"/>
+      </radialGradient>
+      <!-- corner echo arc stroke -->
+      <linearGradient id="cornerGrad" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0"   stop-color="rgba(46, 230, 168, 0)"/>
+        <stop offset="0.6" stop-color="rgba(120, 250, 200, 0.22)"/>
+        <stop offset="1"   stop-color="rgba(46, 230, 168, 0.04)"/>
+      </linearGradient>
+      <pattern id="gridPlus" width="64" height="64" patternUnits="userSpaceOnUse">
+        <path d="M 0 63.5 H 64 M 63.5 0 V 64" stroke="rgba(140, 225, 180, 0.05)" stroke-width="1" fill="none"/>
+        <path d="M 28 32 H 36 M 32 28 V 36" stroke="rgba(190, 245, 215, 0.11)" stroke-width="1" fill="none"/>
+      </pattern>
+    </defs>
+
+    <!-- ── corner dot fields ─────────────────────────────────────── -->
+    <rect x="0" y="0" width="1920" height="1080" fill="url(#gridPlus)"/>
+    <g id="mosaic" class="mosaic"></g>
+    <g id="uaeNet" class="uae-net" transform="translate(426 133) scale(2.05)" style="filter: blur(1.8px); opacity: 0.55;"></g>
+    <g id="bokehL" class="bokeh-l" style="filter: blur(2.2px);"></g>
+    <g id="sparks"></g>
+    <rect x="0" y="0" width="640" height="480" fill="url(#dots)" mask="url(#dotMaskTL)"/>
+    <rect x="1280" y="620" width="640" height="460" fill="url(#dots)" mask="url(#dotMaskBR)"/>
+
+    <!-- ── corner echo arcs — the ring motif, cropped by the frame ── -->
+    <g fill="none">
+      <circle cx="1905" cy="-60" r="560" stroke="url(#cornerGrad)" stroke-width="1.2"/>
+      <circle cx="1905" cy="-60" r="640" stroke="rgba(146, 255, 205, 0.06)" stroke-width="1"/>
+      <circle cx="1905" cy="-60" r="710" stroke="rgba(195, 226, 210, 0.032)" stroke-width="1"/>
+      <!-- bright segment on the middle echo + node -->
+      <g class="corner-sweep">
+        <path d="M 1489 373 A 640 640 0 0 1 1370 219" stroke="url(#arcGrad)" stroke-width="1.8" stroke-linecap="round" filter="url(#arcGlow)"/>
+        <circle cx="1489" cy="373" r="3" fill="rgba(46, 230, 168, 0.8)"/>
+      </g>
+      <!-- faint mirror in the opposite corner -->
+      <circle cx="30" cy="1130" r="480" stroke="rgba(146, 255, 205, 0.05)" stroke-width="1"/>
+      <circle cx="30" cy="1130" r="545" stroke="rgba(146, 255, 205, 0.03)" stroke-width="1"/>
+    </g>
+
+    <!-- ── lens-flare horizon behind the centrepiece ─────────────── -->
+    <ellipse class="bloom" cx="1085" cy="540" rx="330" ry="60" fill="url(#flareBloom)"/>
+
+    <!-- ── flowing contour lines, sweeping the lower stage ───────── -->
+    <g class="contours" fill="none" stroke="url(#lineFade)" stroke-width="1.1">
+      <path d="M -40 852  C 420 800, 760 918, 1150 860  S 1720 792, 1960 838"/>
+      <path d="M -40 886  C 430 836, 770 950, 1160 892  S 1730 826, 1960 872"/>
+      <path d="M -40 921  C 440 873, 780 983, 1170 925  S 1740 861, 1960 907"/>
+      <path d="M -40 957  C 450 911, 790 1017, 1180 959 S 1750 897, 1960 943"/>
+      <path d="M -40 994  C 460 950, 800 1052, 1190 994 S 1760 934, 1960 980"/>
+      <path d="M -40 1032 C 470 990, 810 1088, 1200 1030 S 1770 972, 1960 1018"/>
+    </g>
+    <!-- a mirrored, fainter set high in the frame -->
+    <g class="contours c-high" fill="none" stroke="url(#lineFade)" stroke-width="1" opacity="0.45">
+      <path d="M -40 118 C 480 168, 900 76, 1300 130 S 1800 186, 1960 152"/>
+      <path d="M -40 84  C 490 132, 910 44,  1310 96  S 1810 150, 1960 118"/>
+    </g>
+
+    <!-- ── the centrepiece: thin HUD rings behind the main object ── -->
+    <g>
+      <!-- soft centre halo -->
+      <circle class="halo" cx="960" cy="540" r="430" fill="url(#haloGrad)"/>
+
+      <!-- glass disc + hairline crosshair, for depth -->
+      <circle cx="960" cy="540" r="150" fill="url(#glassGrad)" stroke="rgba(180, 255, 224, 0.10)" stroke-width="1"/>
+
+      <!-- concentric hairlines -->
+      <circle cx="960" cy="540" r="212" fill="none" stroke="url(#rimGrad)" stroke-width="1.2"/>
+      <circle cx="960" cy="540" r="286" fill="none" stroke="rgba(195, 226, 210, 0.075)" stroke-width="1"/>
+      <circle cx="960" cy="540" r="368" fill="none" stroke="rgba(195, 226, 210, 0.05)" stroke-width="1"/>
+      <circle cx="960" cy="540" r="452" fill="none" stroke="rgba(195, 226, 210, 0.032)" stroke-width="1"/>
+      <!-- dashed orbit -->
+      <circle class="dash-ring" cx="960" cy="540" r="324" fill="none" stroke="rgba(195, 226, 210, 0.08)" stroke-width="1" stroke-dasharray="2 10"/>
+
+      <!-- tick ring: 60 fine ticks on r=368 -->
+      <g id="ticks" stroke="rgba(195, 226, 210, 0.09)" stroke-width="1"></g>
+
+      <!-- the bright arc — top-right, like the reference lock badge -->
+      <g class="orbit-a">
+        <path d="M 960 328 A 212 212 0 0 1 1148 431"
+              fill="none" stroke="url(#arcGrad)" stroke-width="2.5" stroke-linecap="round" filter="url(#arcGlow)"/>
+        <circle cx="1148" cy="431" r="4" fill="#2ee6a8" filter="url(#arcGlow)"/>
+        <circle cx="1148" cy="431" r="9" fill="none" stroke="rgba(46, 230, 168, 0.35)" stroke-width="1"/>
+        <circle cx="960" cy="328" r="2.5" fill="rgba(146, 255, 205, 0.55)"/>
+      </g>
+      <!-- its counterweight — bottom-left, dimmer, wider ring -->
+      <g class="orbit-b">
+        <path d="M 772 649 A 286 286 0 0 1 700 466"
+              fill="none" stroke="url(#arcGrad2)" stroke-width="2" stroke-linecap="round" filter="url(#arcGlow)"/>
+        <circle cx="700" cy="466" r="3" fill="rgba(46, 230, 168, 0.75)"/>
+      </g>
+      <!-- short accent low on the dashed orbit -->
+      <g class="orbit-c">
+        <path d="M 1128 815 A 324 324 0 0 0 1244 700"
+              fill="none" stroke="rgba(46, 230, 168, 0.28)" stroke-width="1.6" stroke-linecap="round" filter="url(#arcGlow)"/>
+      </g>
+
+      <!-- nodes where the arcs end -->
+
+      <!-- four cardinal micro-marks on the outer ring -->
+      <g stroke="rgba(195, 226, 210, 0.20)" stroke-width="1.5">
+        <line x1="960" y1="82"  x2="960" y2="96"/>
+        <line x1="960" y1="984" x2="960" y2="998"/>
+        <line x1="502" y1="540" x2="516" y2="540"/>
+        <line x1="1404" y1="540" x2="1418" y2="540"/>
+      </g>
+    </g>
+
+    <!-- ── sparse "+" field marks — designed emptiness ───────────── -->
+    <g stroke="rgba(200, 224, 212, 0.12)" stroke-width="1">
+      <path d="M 250 260 h 12 M 256 254 v 12"/>
+      <path d="M 1690 210 h 12 M 1696 204 v 12"/>
+      <path d="M 1770 760 h 12 M 1776 754 v 12"/>
+      <path d="M 165 700 h 12 M 171 694 v 12"/>
+      <path d="M 1220 150 h 10 M 1225 145 v 10"/>
+      <path d="M 640 940 h 10 M 645 935 v 10"/>
+    </g>
+
+    <!-- ── frozen light dust — a dozen still specks, three lit ───── -->
+    <g class="dust">
+      <circle cx="410"  cy="330" r="1.6" fill="rgba(146, 255, 205, 0.28)"/>
+      <circle cx="530"  cy="770" r="1.3" fill="rgba(146, 255, 205, 0.18)"/>
+      <circle cx="705"  cy="205" r="1.8" fill="rgba(146, 255, 205, 0.33)"/>
+      <circle cx="1235" cy="870" r="1.4" fill="rgba(146, 255, 205, 0.20)"/>
+      <circle cx="1330" cy="300" r="1.2" fill="rgba(146, 255, 205, 0.22)"/>
+      <circle cx="1545" cy="620" r="1.7" fill="rgba(146, 255, 205, 0.26)"/>
+      <circle cx="1650" cy="450" r="1.2" fill="rgba(146, 255, 205, 0.16)"/>
+      <circle cx="285"  cy="520" r="1.3" fill="rgba(146, 255, 205, 0.18)"/>
+      <circle cx="860"  cy="130" r="1.2" fill="rgba(146, 255, 205, 0.20)"/>
+      <circle cx="1090" cy="960" r="1.5" fill="rgba(146, 255, 205, 0.18)"/>
+      <circle cx="1795" cy="555" r="2.4" fill="rgba(150, 255, 215, 0.6)" filter="url(#arcGlow)"/>
+      <circle cx="360"  cy="885" r="2.2" fill="rgba(150, 255, 215, 0.5)" filter="url(#arcGlow)"/>
+      <circle cx="565"  cy="405" r="2.0" fill="rgba(150, 255, 215, 0.45)" filter="url(#arcGlow)"/>
+    </g>
+
+    <script type="application/ecmascript"><![CDATA[
+      /* 60 tick marks on r=368 — generated so the markup stays clean */
+      (function () {
+        var g = document.getElementById('ticks');
+        var NS = 'http://www.w3.org/2000/svg';
+        for (var i = 0; i < 60; i++) {
+          var a = i * Math.PI * 2 / 60;
+          var big = i % 5 === 0;
+          var r0 = 368, r1 = big ? 378 : 374;
+          var l = document.createElementNS(NS, 'line');
+          l.setAttribute('x1', (960 + r0 * Math.cos(a)).toFixed(1));
+          l.setAttribute('y1', (540 + r0 * Math.sin(a)).toFixed(1));
+          l.setAttribute('x2', (960 + r1 * Math.cos(a)).toFixed(1));
+          l.setAttribute('y2', (540 + r1 * Math.sin(a)).toFixed(1));
+          if (big) l.setAttribute('stroke', 'rgba(195, 226, 210, 0.15)');
+          g.appendChild(l);
+        }
+      })();
+    ]]></script>
+  </svg>
+
+  <div class="layer grade"></div>
+
+<script>
+/* poster texture layers — deterministic, generated once */
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function lcg(seed) { var x = seed >>> 0; return function () { x = (1664525 * x + 1013904223) >>> 0; return x / 4294967296; }; }
+  function el(g, n, at) { var e = document.createElementNS(NS, n); for (var k in at) e.setAttribute(k, at[k]); g.appendChild(e); return e; }
+
+  /* 1 · pixel-mosaic vortex around the centre (Police-Eye language) */
+  var g = document.getElementById('mosaic'), r = lcg(77);
+  for (var R = 210; R <= 960; R += 34) {
+    var n = Math.max(10, Math.floor(2 * Math.PI * R / 34));
+    for (var i = 0; i < n; i++) {
+      if (r() < 0.45) continue;
+      var a = i * 2 * Math.PI / n + (R % 68 === 0 ? Math.PI / n : 0);
+      var x = 960 + R * Math.cos(a), y = 540 + R * Math.sin(a);
+      if (y < -20 || y > 1100 || x < -20 || x > 1940) continue;
+      var w = 9 + r() * 16, h = 7 + r() * 9;
+      var bright = r() > 0.94;
+      var o = (0.028 + r() * 0.075) * (R < 330 ? 0.55 : 1);
+      el(g, 'rect', {
+        x: (-w / 2).toFixed(1), y: (-h / 2).toFixed(1), width: w.toFixed(1), height: h.toFixed(1), rx: 1.5,
+        transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (a * 180 / Math.PI + 90).toFixed(1) + ')',
+        fill: bright ? 'rgba(110, 240, 185, ' + (0.10 + r() * 0.09).toFixed(3) + ')' : 'rgba(70, 190, 140, ' + o.toFixed(3) + ')'
+      });
+    }
+  }
+
+  /* 2 · UAE particle constellation (Innovation-Month language) */
+  var P = '41,212.9 96.2,242 169.8,225.5 261.8,225.5 303.2,193.5 330.8,157.6 358.4,135.2 384.2,111 409,86.8 441.2,62.5 453.2,36.3 464.2,48 476.2,86.8 479.8,130.4 468.8,154.6 441.2,145 430.2,178.9 425.6,217.7 409,246.8 404.4,295.3 372.2,361.3 243.4,356.4 131.2,339.9 76,287.5'
+    .split(' ').map(function (s) { return s.split(',').map(Number); });
+  function inPoly(x, y) {
+    var ins = false;
+    for (var i = 0, j = P.length - 1; i < P.length; j = i++) {
+      if ((P[i][1] > y) !== (P[j][1] > y) && x < (P[j][0] - P[i][0]) * (y - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) ins = !ins;
+    }
+    return ins;
+  }
+  var net = document.getElementById('uaeNet'), r2 = lcg(313);
+  var nodes = P.slice();
+  [[374, 123], [238, 247], [400, 99], [415, 80], [429, 62], [447, 44], [476, 128]].forEach(function (c) { nodes.push(c); });
+  var tries = 0;
+  while (nodes.length < 46 && tries < 900) {
+    tries++;
+    var nx = 40 + r2() * 445, ny = 30 + r2() * 335;
+    if (inPoly(nx, ny)) nodes.push([nx, ny]);
+  }
+  el(net, 'polygon', { points: P.map(function (p) { return p.join(','); }).join(' '), fill: 'none', stroke: 'rgba(150, 245, 200, 0.42)', 'stroke-width': 0.9, 'stroke-linejoin': 'round' });
+  nodes.forEach(function (a, i) {
+    var d1 = 1e9, d2 = 1e9, k1 = -1, k2 = -1;
+    nodes.forEach(function (b, j) {
+      if (i === j) return;
+      var d = (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]);
+      if (d < d1) { d2 = d1; k2 = k1; d1 = d; k1 = j; } else if (d < d2) { d2 = d; k2 = j; }
+    });
+    [k1, k2].forEach(function (k) {
+      if (k > i) el(net, 'line', { x1: a[0].toFixed(1), y1: a[1].toFixed(1), x2: nodes[k][0].toFixed(1), y2: nodes[k][1].toFixed(1), stroke: 'rgba(120, 235, 180, 0.30)', 'stroke-width': 0.45 });
+    });
+  });
+  nodes.forEach(function (a) {
+    var big = r2() > 0.82;
+    el(net, 'circle', { cx: a[0].toFixed(1), cy: a[1].toFixed(1), r: big ? 1.9 : 1.1, fill: 'rgba(170, 250, 210, ' + (big ? 0.65 : 0.45) + ')' });
+  });
+
+  /* 3 · bokeh glow dots + sharp sparks (Behance-grid language) */
+  var bg = document.getElementById('bokehL'), sg = document.getElementById('sparks'), r3 = lcg(929);
+  for (var b = 0; b < 26; b++) {
+    el(bg, 'circle', {
+      cx: (30 + r3() * 1860).toFixed(0), cy: (30 + r3() * 1020).toFixed(0),
+      r: (2.5 + r3() * 5).toFixed(1),
+      fill: 'rgba(' + (r3() > 0.7 ? '210, 255, 235' : '110, 235, 180') + ', ' + (0.10 + r3() * 0.16).toFixed(3) + ')'
+    });
+  }
+  for (var s = 0; s < 16; s++) {
+    el(sg, 'circle', {
+      cx: (20 + r3() * 1880).toFixed(0), cy: (20 + r3() * 1040).toFixed(0),
+      r: (0.9 + r3() * 0.9).toFixed(1),
+      fill: 'rgba(235, 255, 246, ' + (0.22 + r3() * 0.30).toFixed(3) + ')'
+    });
+  }
+})();
+if(!/[?&]static/.test(location.search))document.body.classList.add("motion");</script>
+</body>
+</html>
