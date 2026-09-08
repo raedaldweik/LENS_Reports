@@ -69,11 +69,17 @@ cd chatbot/frontend
 npm run build:single          # → dist-single/index.html — the whole UI in one HTML file
 ```
 
-Everything (JS, CSS, fonts, images) is inlined; fonts are self-hosted so no
-internet access is needed. A prebuilt copy lives at
-`single-file/lens-smart-assistant.html`. Point it at a backend by editing the
-`window.LENS_BACKEND` block near the top of the file — see `INTEGRATION.md`
-for the request/response contract and SAS Job Execution wiring.
+JS, CSS and fonts are inlined (self-hosted — no internet access needed); the
+four brand images load from `window.LENS_ASSETS` URLs. The complete handoff
+package — prebuilt HTML, images, SAS Job Execution job and instructions —
+lives in `lens-assistant/`. See `INTEGRATION.md` for the request/response
+contract. After rebuilding, refresh the package copy and re-point
+`LENS_ASSETS` at `images/…`:
+
+```bash
+cp dist-single/index.html ../lens-assistant/lens-smart-assistant.html
+# then edit window.LENS_ASSETS in that copy: police: 'images/police.png', etc.
+```
 
 ## Single-container deployment
 

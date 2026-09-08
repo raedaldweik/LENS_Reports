@@ -11,7 +11,11 @@ There are two deliverables of the same UI:
 | Form | Where | Backend wiring |
 |---|---|---|
 | Vite app (`frontend/`) served by the FastAPI backend | `python -m uvicorn main:app` or Docker | built in — same origin `/api/*` |
-| **Single file** (`single-file/lens-smart-assistant.html`) | any static host, e.g. the SAS content server | edit the `window.LENS_BACKEND` block near the top of the file |
+| **Single file** (`lens-assistant/lens-smart-assistant.html`) | any static host, e.g. the SAS content server | edit the `window.LENS_BACKEND` block near the top of the file |
+
+The `lens-assistant/` folder is the complete handoff package: the prebuilt
+HTML (image URLs pre-set to its `images/` subfolder), the four images, the
+SAS job, and step-by-step instructions in `README.txt`.
 
 ## The contract
 
@@ -139,7 +143,7 @@ canvas rendering).
 
 ## Ready-made SAS job
 
-`sas/lens_chat_job.sas` is a Job Execution job adapted from the PSD team's
+`lens-assistant/lens_chat_job.sas` is a Job Execution job adapted from the PSD team's
 `proc python` program: it reads the user's question from the `question`
 request parameter (plus optional `history`), runs the same CAS read + on-prem
 LLM call, and writes `{"answer": "..."}` to `_webout`. Its header comment
