@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useChat } from '../context/ChatContext';
 import { exportConversationPdf } from '../services/exportPdf';
-import policeLogo from '../assets/police.png';
-import badgeLogo from '../assets/badge.svg';
-import centerLogo from '../assets/center.png';
+import { policeSrc, badgeSrc, centerSrc } from '../brandAssets';
 
 function LiveBadge() {
   return (
@@ -27,9 +25,9 @@ function CenterLockup() {
 }
 
 export default function Header() {
-  // Official assets in src/assets/: police.png (Dubai Police lockup) and
-  // center.png (SAS + Security Analytics & Forecast Center lockup). Each slot
-  // falls back to the typographic version if its image is missing.
+  // Official images resolve via brandAssets (window.LENS_ASSETS URLs, else
+  // the bundled copies). Each slot falls back to the typographic version when
+  // its image is unconfigured or fails to load.
   const [policeOk, setPoliceOk] = useState(true);
   const [centerOk, setCenterOk] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -58,12 +56,12 @@ export default function Header() {
     <header className="topbar">
       {/* Brand cluster — right side in RTL: police | divider | centre+SAS lockup */}
       <div className="brand">
-        {policeOk ? (
-          <img className="police-logo" src={policeLogo} alt="شرطة دبي — Dubai Police"
+        {policeOk && policeSrc ? (
+          <img className="police-logo" src={policeSrc} alt="شرطة دبي — Dubai Police"
             onError={() => setPoliceOk(false)} />
         ) : (
           <>
-            <img className="badge-logo" src={badgeLogo} alt="" />
+            {badgeSrc && <img className="badge-logo" src={badgeSrc} alt="" />}
             <div className="wordmark">
               <span className="ar">شرطة دبي</span>
               <span className="en">Dubai Police</span>
@@ -71,8 +69,8 @@ export default function Header() {
           </>
         )}
         <div className="divider" />
-        {centerOk ? (
-          <img className="center-logo" src={centerLogo}
+        {centerOk && centerSrc ? (
+          <img className="center-logo" src={centerSrc}
             alt="مركز التحليل والتنبؤ الأمني — Security Analytics & Forecast Center"
             onError={() => setCenterOk(false)} />
         ) : (

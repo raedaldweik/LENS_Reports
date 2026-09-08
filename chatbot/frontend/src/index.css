@@ -64,8 +64,10 @@ html, body {
   gap: 12px;
   padding: 16px 28px 14px;
   background-color: #0d1311;
+  /* First layer comes from brandAssets.js (--bg-image); without it the
+     gradient layers below still paint the themed background. */
   background-image:
-    url('./assets/bg.png'),
+    var(--bg-image, none),
     radial-gradient(ellipse 52% 48% at 76% -8%,  rgba(52, 182, 141, 0.42) 0%, transparent 64%),
     linear-gradient(150deg, #141a17 0%, #0e1412 45%, #0b110e 100%);
   background-size: cover, auto, auto;

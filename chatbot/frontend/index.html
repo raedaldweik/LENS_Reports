@@ -7,6 +7,30 @@
     <title>المساعد الذكي — Dubai Police Smart Assistant</title>
     <script>
       // ─────────────────────────────────────────────────────────────────────
+      // LENS brand images — paste the URL each image is hosted at (e.g. on
+      // SAS Viya). Any entry left empty falls back gracefully: the logos
+      // render as text lockups and the background as the built-in gradient.
+      //
+      //   police:     Dubai Police lockup   (header, PDF export header)
+      //   center:     SAS + Security Analytics & Forecast Center lockup
+      //   badge:      small neutral shield  (only used if police is empty)
+      //   background: full-page background image
+      //
+      // Example:
+      //   window.LENS_ASSETS = {
+      //     police:     'https://viya.example.ae/files/files/<id>/content',
+      //     center:     'https://viya.example.ae/files/files/<id>/content',
+      //     background: 'https://viya.example.ae/files/files/<id>/content',
+      //   };
+      // ─────────────────────────────────────────────────────────────────────
+      window.LENS_ASSETS = {
+        police: '',
+        center: '',
+        badge: '',
+        background: '',
+      };
+
+      // ─────────────────────────────────────────────────────────────────────
       // LENS backend wiring — EDIT THIS BLOCK to point the UI at your backend.
       // Left empty, the UI calls its default FastAPI endpoints same-origin:
       //   POST /api/query      {"query": "...", "conversation_history": [...]}

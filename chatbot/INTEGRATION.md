@@ -114,6 +114,29 @@ fields, CSRF headers) or its output needs reshaping into the contract:
 Other accepted keys: `baseUrl` (prefix for the default paths), `scenariosUrl`,
 `headers` (added to every request), `scenarios` (static array of cards).
 
+## Brand images (`window.LENS_ASSETS`)
+
+The single file embeds no images. Host the four brand images anywhere (e.g.
+upload to SAS Viya and use each file's content URL) and paste the URLs into
+the `window.LENS_ASSETS` block at the top of the file:
+
+```html
+<script>
+  window.LENS_ASSETS = {
+    police:     'https://<viya-host>/files/files/<id>/content', // Dubai Police lockup
+    center:     'https://<viya-host>/files/files/<id>/content', // SAS + centre lockup
+    badge:      '',                                             // small shield (used only if police is empty)
+    background: 'https://<viya-host>/files/files/<id>/content', // page background
+  };
+</script>
+```
+
+Any entry left empty degrades gracefully: logos render as typographic
+lockups, the background as the built-in gradient. The `police` and `center`
+URLs are also used in the exported PDF report header, so serve them from the
+same origin as the page (a cross-origin image can block the PDF export's
+canvas rendering).
+
 ## Ready-made SAS job
 
 `sas/lens_chat_job.sas` is a Job Execution job adapted from the PSD team's
