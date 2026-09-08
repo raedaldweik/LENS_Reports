@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import policeLogo from '../assets/police.png';
+import centerLogo from '../assets/center.png';
 
 /* Branded PDF export of the current conversation (تصدير التقرير).
    Builds an off-screen light-themed report — header with the official logos,
@@ -49,8 +51,8 @@ export async function exportConversationPdf(chat) {
 
   const head = el('div', 'pdf-head');
   const logos = el('div', 'pdf-logos');
-  const police = el('img'); police.src = '/police.png'; police.style.height = '46px';
-  const center = el('img'); center.src = '/center.png'; center.style.height = '40px';
+  const police = el('img'); police.src = policeLogo; police.style.height = '46px';
+  const center = el('img'); center.src = centerLogo; center.style.height = '40px';
   logos.append(police, center);
   head.appendChild(logos);
   head.appendChild(el('div', 'pdf-title',

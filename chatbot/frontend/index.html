@@ -2,9 +2,48 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/badge.svg" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNoaWVsZCIgeDE9IjEyIiB5MT0iNiIgeDI9IjUyIiB5Mj0iNTgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNDNlOGJjIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMC41NSIgc3RvcC1jb2xvcj0iIzJkZDRhNyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxNDgwNWYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiAzIEw1NCAxMCBWMzAgQzU0IDQ1IDQ1IDU1IDMyIDYxIEMxOSA1NSAxMCA0NSAxMCAzMCBWMTAgWiIKICAgICAgICBmaWxsPSJyZ2JhKDIwLDEyOCw5NSwwLjE4KSIgc3Ryb2tlPSJ1cmwoI3NoaWVsZCkiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMyIDEyIEw0OCAxNyBWMzAgQzQ4IDQxLjUgNDEuNSA0OSAzMiA1My44IEMyMi41IDQ5IDE2IDQxLjUgMTYgMzAgVjE3IFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDY3LDIzMiwxODgsMC40NSkiIHN0cm9rZS13aWR0aD0iMS4yIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMyIDIwIEwzNS4xIDI3LjIgTDQzIDI3LjkgTDM3IDMzIEwzOC45IDQwLjcgTDMyIDM2LjYgTDI1LjEgNDAuNyBMMjcgMzMgTDIxIDI3LjkgTDI4LjkgMjcuMiBaIgogICAgICAgIGZpbGw9InVybCgjc2hpZWxkKSIvPgo8L3N2Zz4K" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>المساعد الذكي — Dubai Police Smart Assistant</title>
+    <script>
+      // ─────────────────────────────────────────────────────────────────────
+      // LENS backend wiring — EDIT THIS BLOCK to point the UI at your backend.
+      // Left empty, the UI calls its default FastAPI endpoints same-origin:
+      //   POST /api/query      {"query": "...", "conversation_history": [...]}
+      //   GET  /api/scenarios  (optional — built-in suggestion cards are used
+      //                         as a fallback when it is unreachable)
+      //
+      // The /api/query response the UI renders:
+      //   {
+      //     "answer": "markdown text",             // required
+      //     "charts": [ {"type":"bar","title":"…","data":[…],
+      //                  "xKey":"…","yKeys":[{"key":"…","label":"…","color":"…"}] } ],
+      //     "trace":  [ {"agent":"…","tool":"…","description":"…",
+      //                  "detail":"…","duration_ms":123} ],
+      //     "status": "answered"
+      //   }
+      // "charts" and "trace" are optional; a plain {"answer": "…"} (or even a
+      // bare string) also works — the UI fills in the rest.
+      //
+      // Option A — your backend lives at another URL / path:
+      //   window.LENS_BACKEND = { queryUrl: '/SASJobExecution/?_program=/Public/jobs/lens_chat' };
+      //
+      // Option B — full control over the request (e.g. SAS job needs form
+      // fields, CSRF headers, or its output needs reshaping):
+      //   window.LENS_BACKEND = {
+      //     sendQuery: async (query, history) => {
+      //       const r = await fetch('/SASJobExecution/?_program=/Public/jobs/lens_chat', {
+      //         method: 'POST',
+      //         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      //         body: new URLSearchParams({ question: query }),
+      //       });
+      //       const out = await r.json();
+      //       return { answer: out.answer };   // map your fields here
+      //     },
+      //   };
+      // ─────────────────────────────────────────────────────────────────────
+      window.LENS_BACKEND = {};
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -62,6 +62,19 @@ VITE_API_PORT=8010 npm run dev                     # frontend
 
 The backend looks for the three `TRF_*.csv` files at the repo root (override with `DATA_DIR`).
 
+## Single-file build (static hosting, e.g. SAS content server)
+
+```bash
+cd chatbot/frontend
+npm run build:single          # → dist-single/index.html — the whole UI in one HTML file
+```
+
+Everything (JS, CSS, fonts, images) is inlined; fonts are self-hosted so no
+internet access is needed. A prebuilt copy lives at
+`single-file/lens-smart-assistant.html`. Point it at a backend by editing the
+`window.LENS_BACKEND` block near the top of the file — see `INTEGRATION.md`
+for the request/response contract and SAS Job Execution wiring.
+
 ## Single-container deployment
 
 ```bash

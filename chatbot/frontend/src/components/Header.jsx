@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useChat } from '../context/ChatContext';
 import { exportConversationPdf } from '../services/exportPdf';
+import policeLogo from '../assets/police.png';
+import badgeLogo from '../assets/badge.svg';
+import centerLogo from '../assets/center.png';
 
 function LiveBadge() {
   return (
@@ -24,7 +27,7 @@ function CenterLockup() {
 }
 
 export default function Header() {
-  // Official assets in frontend/public/: police.png (Dubai Police lockup) and
+  // Official assets in src/assets/: police.png (Dubai Police lockup) and
   // center.png (SAS + Security Analytics & Forecast Center lockup). Each slot
   // falls back to the typographic version if its image is missing.
   const [policeOk, setPoliceOk] = useState(true);
@@ -56,11 +59,11 @@ export default function Header() {
       {/* Brand cluster — right side in RTL: police | divider | centre+SAS lockup */}
       <div className="brand">
         {policeOk ? (
-          <img className="police-logo" src="/police.png" alt="شرطة دبي — Dubai Police"
+          <img className="police-logo" src={policeLogo} alt="شرطة دبي — Dubai Police"
             onError={() => setPoliceOk(false)} />
         ) : (
           <>
-            <img className="badge-logo" src="/badge.svg" alt="" />
+            <img className="badge-logo" src={badgeLogo} alt="" />
             <div className="wordmark">
               <span className="ar">شرطة دبي</span>
               <span className="en">Dubai Police</span>
@@ -69,7 +72,7 @@ export default function Header() {
         )}
         <div className="divider" />
         {centerOk ? (
-          <img className="center-logo" src="/center.png"
+          <img className="center-logo" src={centerLogo}
             alt="مركز التحليل والتنبؤ الأمني — Security Analytics & Forecast Center"
             onError={() => setCenterOk(false)} />
         ) : (
