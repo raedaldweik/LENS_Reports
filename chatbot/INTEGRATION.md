@@ -114,6 +114,16 @@ fields, CSRF headers) or its output needs reshaping into the contract:
 Other accepted keys: `baseUrl` (prefix for the default paths), `scenariosUrl`,
 `headers` (added to every request), `scenarios` (static array of cards).
 
+## Ready-made SAS job
+
+`sas/lens_chat_job.sas` is a Job Execution job adapted from the PSD team's
+`proc python` program: it reads the user's question from the `question`
+request parameter (plus optional `history`), runs the same CAS read + on-prem
+LLM call, and writes `{"answer": "..."}` to `_webout`. Its header comment
+contains the exact `window.LENS_BACKEND` block to paste into
+`lens-smart-assistant.html`. Fill in the CONFIGURATION section (CAS + LLM
+endpoints) before deploying.
+
 ## Notes for a SAS-hosted deployment
 
 - **Host the HTML and the API on the same origin** (the same SAS web server).
