@@ -62,6 +62,25 @@ VITE_API_PORT=8010 npm run dev                     # frontend
 
 The backend looks for the three `TRF_*.csv` files at the repo root (override with `DATA_DIR`).
 
+## Single-file build (static hosting, e.g. SAS content server)
+
+```bash
+cd chatbot/frontend
+npm run build:single          # → dist-single/index.html — the whole UI in one HTML file
+```
+
+JS, CSS and fonts are inlined (self-hosted — no internet access needed); the
+four brand images load from `window.LENS_ASSETS` URLs. The complete handoff
+package — prebuilt HTML, images, SAS Job Execution job and instructions —
+lives in `lens-assistant/`. See `INTEGRATION.md` for the request/response
+contract. After rebuilding, refresh the package copy and re-point
+`LENS_ASSETS` at `images/…`:
+
+```bash
+cp dist-single/index.html ../lens-assistant/lens-smart-assistant.html
+# then edit window.LENS_ASSETS in that copy: police: 'images/police.png', etc.
+```
+
 ## Single-container deployment
 
 ```bash

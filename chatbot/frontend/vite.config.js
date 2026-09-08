@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath, URL } from 'node:url';
 
 // Dev: Vite on :5173 proxies /api to the FastAPI backend.
 // Backend port defaults to 8000 — override with VITE_API_PORT (or a full
@@ -10,6 +11,13 @@ const target = process.env.VITE_API_TARGET
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      // Brand images ship inside this build; the single-file build
+      // (vite.single.config.js) swaps in assets-external.js instead.
+      '@brand-assets': fileURLToPath(new URL('./src/assets-bundled.js', import.meta.url)),
+    },
+  },
   server: {
     proxy: {
       '/api': {
